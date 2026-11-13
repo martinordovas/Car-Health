@@ -1,0 +1,324 @@
+@if (!store.selected()) {
+  <app-page-header eyebrow="Prevención" title="Mantenimiento" subtitle="El plan de cuidados de tu coche, siempre a mano." />
+  <div class="card">
+    <app-empty-state
+      title="Añade tu coche para crear su plan"
+      description="Generaremos un plan preventivo con aceite, filtros, frenos, ITV y todo lo importante."
+    >
+      <a routerLink="/app/garage" class="btn btn-primary">
+        <app-icon name="plus" [size]="16" />
+        Añadir coche
+      </a>
+    </app-empty-state>
+  </div>
+} @else {
+  <div class="page-enter">
+    <app-page-header
+      eyebrow="Prevención"
+      title="Mantenimiento"
+      [subtitle]="'El plan de ' + (store.selected()?.name ?? 'tu coche') + ' y todo lo que ya has hecho.'"
+    >
+      <a routerLink="/app/services/new" class="btn btn-primary">
+        <app-icon name="plus" [size]="17" />
+        Nuevo mantenimiento
+      </a>
+    </app-page-header>
+
+    @if (loading() && rules().length === 0 && records().length === 0) {
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          @for (item of [1, 2, 3, 4]; track item) {
+            <div class="skeleton h-24 rounded-2xl"></div>
+          }
+        </div>
+        <div class="skeleton h-64 rounded-3xl"></div>
+      </div>
+    } @else if (error() && rules().length === 0) {
+      <div class="card mx-auto max-w-lg p-8 text-center">
+        <span class="mx-auto grid size-14 place-items-center rounded-2xl bg-warning-soft text-warning">
+          <app-icon name="cloud-off" [size]="26" />
+        </span>
+        <h2 class="mt-5 text-lg font-bold">No hay mantenimiento disponible offline</h2>
+        <p class="mt-2 text-sm text-muted">{{ error() }}</p>
+        <button class="btn btn-primary mt-5" type="button" (click)="retry()">
+          <app-icon name="refresh" [size]="17" />
+          Reintentar
+        </button>
+      </div>
+    } @else {
+      <div class="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div class="card-flat p-4">
+          <div class="flex items-center gap-2 text-muted">
+            <app-icon name="shield" [size]="14" />
+            <p class="text-[10px] font-bold uppercase tracking-[0.1em]">Próximo</p>
+          </div>
+          <p class="mt-2 truncate text-sm font-bold">{{ nextRule()?.name ?? 'Plan al día' }}</p>
+          <p class="mt-1 text-[11px] text-muted">
+            @if (nextRule()) {
+              {{ statusLabel(nextRule()!.status) }}
+            } @else {
+              Sin vencimientos
+            }
+          </p>
+        </div>
+        <div class="card-flat p-4">
+          <div class="flex items-center gap-2 text-muted">
+            <app-icon name="alert-triangle" [size]="14" />
+            <p class="text-[10px] font-bold uppercase tracking-[0.1em]">Atención</p>
+          </div>
+          <p class="metric-value mt-2 text-xl">{{ overdueCount() + soonCount() }}</p>
+          <p class="mt-1 text-[11px] text-muted">{{ overdueCount() }} vencidos · {{ soonCount() }} próximos</p>
+        </div>
+        <div class="card-flat p-4">
+          <div class="flex items-center gap-2 text-muted">
+            <app-icon name="euro" [size]="14" />
+            <p class="text-[10px] font-bold uppercase tracking-[0.1em]">Invertido</p>
+          </div>
+          <p class="metric-value mt-2 text-xl">{{ money(totalSpent()) }}</p>
+          <p class="mt-1 text-[11px] text-muted">{{ displayRecords().length }} intervenciones</p>
+        </div>
+        <div class="card-flat p-4">
+          <div class="flex items-center gap-2 text-muted">
+            <app-icon name="gauge" [size]="14" />
+            <p class="text-[10px] font-bold uppercase tracking-[0.1em]">Kilómetros</p>
+          </div>
+          <p class="metric-value mt-2 text-xl">{{ km(store.selected()?.currentOdometer) }}</p>
+          <p class="mt-1 text-[11px] text-muted">Odómetro actual</p>
+        </div>
+      </div>
+
+      <div class="mb-5 flex w-full max-w-sm rounded-2xl border border-line bg-surface p-1">
+        <button
+          type="button"
+          class="flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition"
+          [class]="tab() === 'plan' ? 'bg-ink text-canvas shadow-sm dark:bg-accent dark:text-accent-ink' : 'text-muted hover:text-ink'"
+          (click)="tab.set('plan')"
+        >
+          <app-icon name="shield" [size]="15" />
+          Plan preventivo
+        </button>
+        <button
+          type="button"
+          class="flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition"
+          [class]="tab() === 'history' ? 'bg-ink text-canvas shadow-sm dark:bg-accent dark:text-accent-ink' : 'text-muted hover:text-ink'"
+          (click)="tab.set('history')"
+        >
+          <app-icon name="file-text" [size]="15" />
+          Historial
+          @if (displayRecords().length > 0) {
+            <span class="rounded-full bg-surface-strong px-1.5 py-0.5 text-[9px] text-muted">{{ displayRecords().length }}</span>
+          }
+        </button>
+      </div>
+
+      @if (tab() === 'plan') {
+        @if (rules().length === 0) {
+          <div class="card">
+            <app-empty-state title="Todavía no hay plan preventivo" description="Crea reglas de mantenimiento para controlar cuándo toca cada cosa.">
+              <a routerLink="/app/services/new" class="btn btn-primary">Registrar mantenimiento</a>
+            </app-empty-state>
+          </div>
+        } @else {
+          @if (overdueCount() > 0) {
+            <div class="mb-4 flex items-start gap-3 rounded-2xl border border-danger/20 bg-danger-soft px-4 py-3 text-danger">
+              <app-icon name="alert-triangle" [size]="18" class="mt-0.5 shrink-0" />
+              <p class="text-xs font-semibold leading-relaxed">
+                Tienes {{ overdueCount() }} mantenimiento{{ overdueCount() === 1 ? '' : 's' }} vencido{{ overdueCount() === 1 ? '' : 's' }}. Mejor no darle más vueltas.
+              </p>
+            </div>
+          }
+          <div class="grid gap-4 md:grid-cols-2">
+            @for (rule of rules(); track rule.id) {
+              <article class="card card-hover overflow-hidden p-5">
+                <div class="flex items-start gap-3">
+                  <span
+                    class="grid size-10 shrink-0 place-items-center rounded-xl"
+                    [class]="rule.category === 'LEGAL' ? 'bg-warning-soft text-warning' : 'bg-brand-soft text-brand dark:text-accent'"
+                  >
+                    <app-icon [name]="rule.category === 'LEGAL' ? 'file-text' : 'shield'" [size]="18" />
+                  </span>
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-start justify-between gap-2">
+                      <h2 class="text-sm font-bold leading-snug">{{ rule.name }}</h2>
+                      <span class="chip shrink-0" [class]="statusTone(rule.status)">{{ statusLabel(rule.status) }}</span>
+                    </div>
+                    <p class="mt-1 text-[11px] text-muted">
+                      @if (rule.intervalKm) {
+                        Cada {{ km(rule.intervalKm) }}
+                      }
+                      @if (rule.intervalKm && rule.intervalMonths) {
+                        <span> · </span>
+                      }
+                      @if (rule.intervalMonths) {
+                        Cada {{ rule.intervalMonths }} meses
+                      }
+                      @if (!rule.intervalKm && !rule.intervalMonths) {
+                        Sin intervalo definido
+                      }
+                    </p>
+                  </div>
+                </div>
+
+                <div class="mt-5">
+                  <div class="flex items-center justify-between text-[10px] font-semibold text-faint">
+                    <span>{{ rule.lastServiceDate ? 'Último: ' + dateMedium(rule.lastServiceDate) : 'Desde el inicio' }}</span>
+                    @if (rule.nextServiceDate) {
+                      <span>Vence {{ dateMedium(rule.nextServiceDate) }}</span>
+                    }
+                  </div>
+                  <div class="mt-2 h-2 overflow-hidden rounded-full bg-surface-strong">
+                    <div
+                      class="h-full rounded-full transition-all duration-500"
+                      [class]="rule.status === 'OVERDUE' ? 'bg-danger' : rule.status === 'DUE_SOON' ? 'bg-warning' : 'bg-success'"
+                      [style.width.%]="progress(rule)"
+                    ></div>
+                  </div>
+                  <div class="mt-2 flex items-center justify-between text-[11px] font-medium text-muted">
+                    <span>{{ remainingKm(rule.remainingKm) }}</span>
+                    <span>{{ remainingDays(rule.remainingDays) }}</span>
+                  </div>
+                </div>
+
+                <div class="mt-4 flex items-center justify-between border-t border-line pt-4">
+                  <span class="text-[10px] font-medium text-faint">
+                    {{ rule.lastServiceTitle ? 'Última: ' + rule.lastServiceTitle : 'Sin registro previo' }}
+                  </span>
+                  <a
+                    routerLink="/app/services/new"
+                    [queryParams]="{ ruleId: rule.id, title: rule.name }"
+                    class="btn btn-ghost btn-sm -me-2 text-brand dark:text-accent"
+                  >
+                    Registrar
+                    <app-icon name="arrow-right" [size]="14" />
+                  </a>
+                </div>
+              </article>
+            }
+          </div>
+        }
+      } @else {
+        @if (displayRecords().length === 0) {
+          <div class="card">
+            <app-empty-state
+              title="Aún no hay intervenciones"
+              description="Registra el primer mantenimiento para empezar tu libro de vida del coche."
+            >
+              <a routerLink="/app/services/new" class="btn btn-primary">
+                <app-icon name="wrench" [size]="17" />
+                Registrar mantenimiento
+              </a>
+            </app-empty-state>
+          </div>
+        } @else {
+          <div class="space-y-3">
+            @for (record of displayRecords(); track record.id) {
+              <article
+                class="card overflow-hidden transition"
+                [class.ring-1]="isExpanded(record.id)"
+                [class.ring-line]="isExpanded(record.id)"
+                [class.opacity-80]="record.pending"
+              >
+                <button type="button" class="flex w-full items-center gap-3 p-4 text-left sm:gap-4 sm:p-5" (click)="toggleRecord(record.id)">
+                  <span
+                    class="grid size-10 shrink-0 place-items-center rounded-xl sm:size-11"
+                    [class]="record.category === 'CORRECTIVE' ? 'bg-danger-soft text-danger' : record.category === 'LEGAL' ? 'bg-warning-soft text-warning' : record.category === 'MODIFICATION' ? 'bg-info-soft text-info' : 'bg-brand-soft text-brand dark:text-accent'"
+                  >
+                    <app-icon [name]="recordIcon(record)" [size]="18" />
+                  </span>
+
+                  <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <p class="truncate text-sm font-bold">{{ record.title }}</p>
+                      @if (record.pending) {
+                        <span class="chip chip-warning">Pendiente</span>
+                      }
+                    </div>
+                    <p class="mt-1 truncate text-[11px] text-muted">
+                      {{ dateMedium(record.date) }} · {{ km(record.odometer) }} · {{ performedByLabel[record.performedBy] }}
+                    </p>
+                    <div class="mt-1.5 flex flex-wrap gap-1.5">
+                      <span class="chip" [class]="categoryTone(record.category)">{{ categoryLabel(record.category) }}</span>
+                      @if (record.ruleName) {
+                        <span class="chip chip-neutral">{{ record.ruleName }}</span>
+                      }
+                      @if (partsCount(record) > 0) {
+                        <span class="chip chip-neutral">{{ partsCount(record) }} recambio{{ partsCount(record) === 1 ? '' : 's' }}</span>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="flex shrink-0 items-center gap-2">
+                    <p class="tabular text-sm font-bold">{{ money(record.totalCost) }}</p>
+                    <app-icon
+                      name="chevron-down"
+                      [size]="16"
+                      class="text-faint transition-transform"
+                      [class.rotate-180]="isExpanded(record.id)"
+                    />
+                  </div>
+                </button>
+
+                @if (isExpanded(record.id)) {
+                  <div class="border-t border-line bg-surface-soft/60 px-4 py-4 sm:px-5">
+                    <div class="grid gap-3 text-xs sm:grid-cols-3">
+                      <div>
+                        <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">Mano de obra</p>
+                        <p class="mt-1 font-semibold">{{ money(record.laborCost) }}</p>
+                      </div>
+                      <div>
+                        <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">Recambios</p>
+                        <p class="mt-1 font-semibold">{{ money(record.partsCost) }}</p>
+                      </div>
+                      <div>
+                        <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">Realizado en</p>
+                        <p class="mt-1 font-semibold">{{ performedByLabel[record.performedBy] }}</p>
+                      </div>
+                    </div>
+
+                    @if (record.parts.length > 0) {
+                      <div class="mt-4 overflow-hidden rounded-xl border border-line bg-surface">
+                        @for (part of record.parts; track $index; let last = $last) {
+                          <div class="flex items-center gap-3 px-3 py-2.5 text-xs" [class.border-b]="!last" [class.border-line]="!last">
+                            <span class="min-w-0 flex-1">
+                              <span class="block truncate font-semibold">{{ part.partName }}</span>
+                              <span class="block text-[10px] text-faint">
+                                {{ part.brand || 'Sin marca' }}{{ part.oemReference ? ' · ' + part.oemReference : '' }}
+                              </span>
+                            </span>
+                            <span class="shrink-0 text-[11px] text-muted">×{{ decimal(part.quantity, 2) }}</span>
+                            <span class="w-16 shrink-0 text-right font-semibold">{{ money(part.lineTotal ?? part.quantity * part.unitPrice) }}</span>
+                          </div>
+                        }
+                      </div>
+                    }
+
+                    @if (record.notes) {
+                      <div class="mt-4 rounded-xl border border-line bg-surface p-3">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">Notas</p>
+                        <p class="mt-1 text-xs leading-relaxed text-muted">{{ record.notes }}</p>
+                      </div>
+                    }
+
+                    @if (record.invoiceFilePath) {
+                      <p class="mt-3 inline-flex items-center gap-1.5 text-[10px] font-medium text-faint">
+                        <app-icon name="file-text" [size]="12" />
+                        Factura: {{ record.invoiceFilePath }}
+                      </p>
+                    }
+                  </div>
+                }
+              </article>
+            }
+          </div>
+
+          <div class="mt-5 flex justify-center">
+            <a routerLink="/app/services/new" class="btn btn-surface">
+              <app-icon name="plus" [size]="16" />
+              Registrar otra intervención
+            </a>
+          </div>
+        }
+      }
+    }
+  </div>
+}

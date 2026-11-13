@@ -1,0 +1,60 @@
+spring:
+  application:
+    name: carhealth-api
+  datasource:
+    # Ruta relativa a backend/ (directorio de trabajo de Maven y VS Code).
+    # En Docker se sobrescribe con DB_URL apuntando a PostgreSQL.
+    url: ${DB_URL:jdbc:h2:file:../dbconfig/h2/carhealth;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH}
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.jdbc.time_zone: UTC
+  flyway:
+    enabled: true
+  h2:
+    console:
+      enabled: ${H2_CONSOLE:true}
+      path: /h2-console
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: framework
+  error:
+    include-stacktrace: never
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:carhealth-development-secret-change-me-in-production-2026-abcdef}
+    expiration-days: ${JWT_EXPIRATION_DAYS:30}
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:4200}
+  demo-data: ${DEMO_DATA:true}
+
+springdoc:
+  api-docs:
+    enabled: ${SPRINGDOC_ENABLED:true}
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: ${SPRINGDOC_ENABLED:true}
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    org.hibernate.SQL: warn

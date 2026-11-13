@@ -1,0 +1,48 @@
+{
+  "name": "Car Health",
+  "short_name": "Car Health",
+  "description": "Tu garaje, en orden. Repostajes, mantenimiento y consumo real, incluso sin conexión.",
+  "display": "standalone",
+  "scope": "./",
+  "start_url": "./",
+  "id": "./",
+  "theme_color": "#143d2b",
+  "background_color": "#f2f4ef",
+  "lang": "es",
+  "orientation": "portrait-primary",
+  "categories": ["auto", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nuevo repostaje",
+      "short_name": "Repostar",
+      "url": "./app/fuel/new",
+      "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Nuevo mantenimiento",
+      "short_name": "Mantenimiento",
+      "url": "./app/services/new",
+      "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
+    }
+  ]
+}

@@ -1,0 +1,170 @@
+@if (!store.selected()) {
+  <app-page-header eyebrow="Combustible" title="Repostajes" subtitle="Cada depósito cuenta. Aquí está tu historial completo." />
+  <div class="card">
+    <app-empty-state
+      title="Primero necesitas un coche"
+      description="Añade tu vehículo para empezar a registrar repostajes y calcular el consumo real."
+    >
+      <a routerLink="/app/garage" class="btn btn-primary">
+        <app-icon name="plus" [size]="16" />
+        Añadir coche
+      </a>
+    </app-empty-state>
+  </div>
+} @else {
+  <div class="page-enter">
+    <app-page-header
+      eyebrow="Combustible"
+      title="Repostajes"
+      [subtitle]="'Todo el historial de ' + (store.selected()?.name ?? 'tu coche') + ': consumo real y ahorro por gasolinera.'"
+    >
+      <a routerLink="/app/fuel/new" class="btn btn-primary">
+        <app-icon name="plus" [size]="17" />
+        Nuevo repostaje
+      </a>
+    </app-page-header>
+
+    @if (loading() && logs().length === 0) {
+      <div class="space-y-4">
+        <div class="skeleton h-28 rounded-3xl"></div>
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          @for (item of [1, 2, 3, 4]; track item) {
+            <div class="skeleton h-24 rounded-2xl"></div>
+          }
+        </div>
+        <div class="skeleton h-64 rounded-3xl"></div>
+      </div>
+    } @else if (error() && displayLogs().length === 0) {
+      <div class="card mx-auto max-w-lg p-8 text-center">
+        <span class="mx-auto grid size-14 place-items-center rounded-2xl bg-warning-soft text-warning">
+          <app-icon name="cloud-off" [size]="26" />
+        </span>
+        <h2 class="mt-5 text-lg font-bold">No hay repostajes disponibles offline</h2>
+        <p class="mt-2 text-sm text-muted">{{ error() }}</p>
+        <button class="btn btn-primary mt-5" type="button" (click)="retry()">
+          <app-icon name="refresh" [size]="17" />
+          Reintentar
+        </button>
+      </div>
+    } @else if (displayLogs().length === 0) {
+      <div class="card">
+        <app-empty-state
+          title="Todavía no has repostado"
+          description="Apunta tu primer repostaje para empezar a calcular consumo real, precio medio y ahorro."
+        >
+          <a routerLink="/app/fuel/new" class="btn btn-primary">
+            <app-icon name="fuel" [size]="17" />
+            Apuntar repostaje
+          </a>
+        </app-empty-state>
+      </div>
+    } @else {
+      <section class="relative mb-5 overflow-hidden rounded-[26px] border border-line bg-surface p-5 sm:p-6">
+        <div class="pointer-events-none absolute -right-16 -top-16 size-56 rounded-full bg-accent/15"></div>
+        <div class="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-start gap-4">
+            <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-accent text-accent-ink">
+              <app-icon name="trend-down" [size]="23" />
+            </span>
+            <div>
+              <p class="eyebrow mb-1">Tu ahorro comparando precios</p>
+              <p class="text-2xl font-bold tracking-[-0.04em] sm:text-3xl">{{ money(totalSavings()) }}</p>
+              <p class="mt-1 max-w-md text-xs leading-relaxed text-muted">
+                @if (totalSavings() > 0) {
+                  Calculado frente a tu media histórica por gasolinera y tu repostaje anterior.
+                } @else {
+                  Cuando repitas en una gasolinera o cambies de precio, empezaremos a medir tu ahorro real.
+                }
+              </p>
+            </div>
+          </div>
+          <div class="flex shrink-0 items-center gap-2">
+            @if (pendingCount() > 0) {
+              <span class="chip chip-warning">
+                <app-icon name="clock" [size]="12" />
+                {{ pendingCount() }} sin sincronizar
+              </span>
+            }
+            <a routerLink="/app/stats" class="btn btn-surface btn-sm">
+              Ver analítica
+              <app-icon name="arrow-right" [size]="14" />
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <div class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div class="card-flat p-4">
+          <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">Gasto total</p>
+          <p class="metric-value mt-2 text-lg sm:text-xl">{{ money(totalSpent()) }}</p>
+        </div>
+        <div class="card-flat p-4">
+          <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">Precio medio</p>
+          <p class="metric-value mt-2 text-lg sm:text-xl">{{ price(avgPrice()) }}</p>
+        </div>
+        <div class="card-flat p-4">
+          <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">Consumo medio</p>
+          <p class="metric-value mt-2 text-lg sm:text-xl">{{ consumption(avgConsumption()) }}</p>
+        </div>
+        <div class="card-flat p-4">
+          <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">Repostajes</p>
+          <p class="metric-value mt-2 text-lg sm:text-xl">{{ displayLogs().length }}</p>
+        </div>
+      </div>
+
+      <div class="space-y-5">
+        @for (group of groups(); track group.key) {
+          <section class="card overflow-hidden">
+            <div class="flex items-center justify-between border-b border-line bg-surface-soft/60 px-4 py-3 sm:px-5">
+              <div class="flex items-center gap-2">
+                <h2 class="text-sm font-bold">{{ group.label }}</h2>
+                <span class="chip chip-neutral">{{ group.logs.length }}</span>
+              </div>
+              <p class="tabular text-xs font-bold">{{ money(group.total) }}</p>
+            </div>
+            <div class="divide-y divide-line">
+              @for (log of group.logs; track log.id) {
+                <div class="flex items-center gap-3 px-4 py-3.5 transition hover:bg-surface-soft/60 sm:gap-4 sm:px-5" [class.bg-warning-soft/20]="log.pending">
+                  <span
+                    class="grid size-10 shrink-0 place-items-center rounded-xl sm:size-11"
+                    [class]="log.pending ? 'bg-warning-soft text-warning' : 'bg-brand-soft text-brand dark:text-accent'"
+                  >
+                    <app-icon [name]="log.pending ? 'clock' : 'fuel'" [size]="18" />
+                  </span>
+
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2">
+                      <p class="truncate text-sm font-bold">{{ log.stationName || 'Sin gasolinera' }}</p>
+                      @if (log.pending) {
+                        <span class="chip chip-warning hidden sm:inline-flex">Pendiente</span>
+                      }
+                    </div>
+                    <p class="mt-0.5 truncate text-[11px] text-muted">
+                      {{ dateMedium(log.date) }} · {{ formatLiters(log.liters) }} · {{ price(log.pricePerLiter) }}/L
+                    </p>
+                    <p class="mt-0.5 text-[10px] text-faint">{{ km(log.odometer) }} · {{ log.fullTank ? 'Depósito lleno' : 'Repostaje parcial' }}</p>
+                  </div>
+
+                  <div class="shrink-0 text-right">
+                    <p class="tabular text-sm font-bold">{{ money(log.totalCost) }}</p>
+                    <div class="mt-1 flex flex-col items-end gap-1">
+                      @if (savingsLabel(log); as saving) {
+                        <span class="chip chip-success">{{ saving }}</span>
+                      }
+                      @if (log.consumption) {
+                        <span class="text-[10px] font-semibold text-faint">{{ consumption(log.consumption) }}</span>
+                      }
+                      @if (log.pending) {
+                        <span class="chip chip-warning sm:hidden">Pendiente</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </section>
+        }
+      </div>
+    }
+  </div>
+}

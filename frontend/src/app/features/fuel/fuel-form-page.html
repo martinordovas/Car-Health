@@ -1,0 +1,287 @@
+@if (!store.selected()) {
+  <div class="mx-auto max-w-lg pt-10">
+    <div class="card p-8 text-center">
+      <span class="mx-auto grid size-14 place-items-center rounded-2xl bg-brand-soft text-brand dark:text-accent">
+        <app-icon name="car" [size]="26" />
+      </span>
+      <h1 class="mt-5 text-xl font-bold">Añade un coche primero</h1>
+      <p class="mt-2 text-sm text-muted">Necesitamos saber en qué coche vas a apuntar el repostaje.</p>
+      <a routerLink="/app/garage" class="btn btn-primary mt-5">Ir a mi garaje</a>
+    </div>
+  </div>
+} @else {
+  <div class="page-enter mx-auto max-w-5xl">
+    <div class="mb-5">
+      <a routerLink="/app/fuel" class="btn btn-ghost btn-sm -ms-3 text-muted">
+        <app-icon name="arrow-left" [size]="15" />
+        Volver a repostajes
+      </a>
+    </div>
+
+    <app-page-header
+      eyebrow="Combustible"
+      title="Nuevo repostaje"
+      [subtitle]="'Apunta el depósito de ' + (store.selected()?.name ?? 'tu coche') + '. Calculamos el ahorro y el consumo real al vuelo.'"
+    >
+      <span class="chip chip-neutral">
+        <app-icon name="cloud-off" [size]="12" />
+        Se puede guardar offline
+      </span>
+    </app-page-header>
+
+    @if (error()) {
+      <div class="mb-5 flex items-start gap-2.5 rounded-2xl border border-danger/20 bg-danger-soft px-4 py-3 text-danger" role="alert">
+        <app-icon name="alert-triangle" [size]="17" class="mt-0.5 shrink-0" />
+        <p class="text-xs font-semibold leading-relaxed">{{ error() }}</p>
+      </div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div class="space-y-4">
+        <section class="card p-5 sm:p-6">
+          <div class="mb-5 flex items-center gap-3">
+            <span class="grid size-9 place-items-center rounded-xl bg-brand-soft text-brand dark:text-accent">
+              <app-icon name="map-pin" [size]="17" />
+            </span>
+            <div>
+              <h2 class="section-title">Cuándo y dónde</h2>
+              <p class="text-[11px] text-muted">Fecha, kilómetros y gasolinera.</p>
+            </div>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label class="label" for="date">Fecha y hora</label>
+              <input id="date" type="datetime-local" class="field" formControlName="date" />
+              @if (fieldError('date'); as message) {
+                <p class="error-text">{{ message }}</p>
+              }
+            </div>
+            <div>
+              <label class="label" for="odometer">Odómetro actual</label>
+              <div class="field-shell">
+                <span class="field-icon"><app-icon name="gauge" [size]="17" /></span>
+                <input
+                  id="odometer"
+                  type="number"
+                  inputmode="numeric"
+                  class="field field-unit"
+                  formControlName="odometer"
+                  [class.field-error]="fieldError('odometer')"
+                  placeholder="48.320"
+                />
+                <span class="field-suffix">km</span>
+              </div>
+              @if (fieldError('odometer'); as message) {
+                <p class="error-text">{{ message }}</p>
+              } @else {
+                <p class="hint">Ahora mismo el coche marca {{ km(store.selected()?.currentOdometer) }}.</p>
+              }
+            </div>
+            <div>
+              <label class="label" for="stationName">Gasolinera</label>
+              <div class="field-shell">
+                <span class="field-icon"><app-icon name="fuel" [size]="17" /></span>
+                <input id="stationName" class="field" formControlName="stationName" placeholder="Plenoil, Repsol, Cepsa…" />
+              </div>
+            </div>
+            <div>
+              <label class="label" for="stationLocation">Ubicación o sucursal</label>
+              <div class="field-shell">
+                <span class="field-icon"><app-icon name="map-pin" [size]="17" /></span>
+                <input id="stationLocation" class="field" formControlName="stationLocation" placeholder="Getafe, A-4 km 12…" />
+              </div>
+              <p class="hint">Usamos este dato para comparar precios de la misma estación.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="card p-5 sm:p-6">
+          <div class="mb-5 flex items-center gap-3">
+            <span class="grid size-9 place-items-center rounded-xl bg-accent/30 text-accent-ink dark:text-accent">
+              <app-icon name="fuel" [size]="17" />
+            </span>
+            <div>
+              <h2 class="section-title">Combustible</h2>
+              <p class="text-[11px] text-muted">Litros y precio por litro del ticket.</p>
+            </div>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label class="label" for="liters">Litros repostados</label>
+              <div class="field-shell">
+                <span class="field-icon"><app-icon name="droplet" [size]="17" /></span>
+                <input
+                  id="liters"
+                  type="number"
+                  inputmode="decimal"
+                  step="0.01"
+                  class="field field-unit"
+                  formControlName="liters"
+                  [class.field-error]="fieldError('liters')"
+                  placeholder="42,50"
+                />
+                <span class="field-suffix">L</span>
+              </div>
+              @if (fieldError('liters'); as message) {
+                <p class="error-text">{{ message }}</p>
+              }
+            </div>
+            <div>
+              <label class="label" for="pricePerLiter">Precio por litro</label>
+              <div class="field-shell">
+                <span class="field-icon"><app-icon name="euro" [size]="17" /></span>
+                <input
+                  id="pricePerLiter"
+                  type="number"
+                  inputmode="decimal"
+                  step="0.001"
+                  class="field field-unit"
+                  formControlName="pricePerLiter"
+                  [class.field-error]="fieldError('pricePerLiter')"
+                  placeholder="1,529"
+                />
+                <span class="field-suffix">€/L</span>
+              </div>
+              @if (fieldError('pricePerLiter'); as message) {
+                <p class="error-text">{{ message }}</p>
+              }
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="mt-5 flex w-full items-center justify-between gap-4 rounded-2xl border border-line bg-surface-soft p-4 text-left transition hover:border-brand/25"
+            (click)="toggleFullTank()"
+            role="switch"
+            [attr.aria-checked]="form.controls.fullTank.value"
+          >
+            <span class="flex items-start gap-3">
+              <span class="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-surface text-brand dark:text-accent">
+                <app-icon name="check-circle" [size]="16" />
+              </span>
+              <span>
+                <span class="block text-sm font-bold">He llenado el depósito</span>
+                <span class="mt-0.5 block text-[11px] leading-relaxed text-muted">
+                  Es necesario para calcular el consumo real entre depósitos llenos. Si es parcial, solo contamos el gasto.
+                </span>
+              </span>
+            </span>
+            <span
+              class="relative h-6 w-11 shrink-0 rounded-full transition-colors"
+              [class.bg-brand]="form.controls.fullTank.value"
+              [class.bg-surface-strong]="!form.controls.fullTank.value"
+            >
+              <span
+                class="absolute left-1 top-1 size-4 rounded-full bg-white shadow-sm transition-transform"
+                [class.translate-x-5]="form.controls.fullTank.value"
+              ></span>
+            </span>
+          </button>
+        </section>
+
+        <section class="card p-5 sm:p-6">
+          <div class="mb-5 flex items-center gap-3">
+            <span class="grid size-9 place-items-center rounded-xl bg-info-soft text-info">
+              <app-icon name="gauge" [size]="17" />
+            </span>
+            <div>
+              <h2 class="section-title">Dato opcional</h2>
+              <p class="text-[11px] text-muted">Compara la cifra del cuadro con el consumo real.</p>
+            </div>
+          </div>
+          <div class="max-w-xs">
+            <label class="label" for="boardComputerAvg">Consumo que marca el coche</label>
+            <div class="field-shell">
+              <span class="field-icon"><app-icon name="chart" [size]="17" /></span>
+              <input
+                id="boardComputerAvg"
+                type="number"
+                inputmode="decimal"
+                step="0.1"
+                class="field field-unit"
+                formControlName="boardComputerAvg"
+                placeholder="6,2"
+              />
+              <span class="field-suffix">L/100</span>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="space-y-4 lg:sticky lg:top-24">
+        <div class="overflow-hidden rounded-[26px] bg-brand p-5 text-white shadow-float">
+          <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-white/45">Total del repostaje</p>
+          <p class="metric-value mt-2 text-[2.4rem] leading-none text-white">{{ total() > 0 ? money(total()) : '—' }}</p>
+          <p class="mt-2 text-[11px] text-white/45">
+            {{ formLiters() > 0 ? decimal(formLiters()) + ' L' : 'Litros' }}
+            ×
+            {{ formPrice() > 0 ? price(formPrice()) : 'precio/L' }}
+          </p>
+
+          <div class="my-5 h-px bg-white/10"></div>
+
+          @if (estimate(); as saving) {
+            <div class="rounded-2xl bg-white/10 p-3.5">
+              <div class="flex items-center gap-2">
+                <span class="grid size-7 place-items-center rounded-full" [class]="saving.cheaper ? 'bg-accent text-accent-ink' : 'bg-white/10 text-white/70'">
+                  <app-icon [name]="saving.cheaper ? 'trend-down' : 'info'" [size]="14" />
+                </span>
+                <p class="text-xs font-bold">
+                  {{ saving.cheaper ? 'Ahorro estimado ' + money(saving.amount) : 'Un poco más caro' }}
+                </p>
+              </div>
+              <p class="mt-2 text-[11px] leading-relaxed text-white/55">
+                @if (saving.cheaper) {
+                  Un {{ decimal(saving.percent < 0 ? -saving.percent : saving.percent) }} % más barato que {{ saving.label }}.
+                } @else {
+                  Un {{ decimal(saving.percent < 0 ? -saving.percent : saving.percent) }} % por encima de {{ saving.label }}.
+                }
+                El cálculo definitivo se confirma al guardar.
+              </p>
+            </div>
+          } @else {
+            <div class="rounded-2xl bg-white/5 p-3.5">
+              <p class="text-xs font-bold">Sin referencia todavía</p>
+              <p class="mt-1 text-[11px] leading-relaxed text-white/45">
+                Al guardar compararemos con tu histórico de esta gasolinera o con tu último repostaje.
+              </p>
+            </div>
+          }
+
+          <button class="btn btn-accent mt-5 w-full" type="submit" [disabled]="saving()">
+            @if (saving()) {
+              <app-icon name="refresh" [size]="17" class="spin-slow" />
+              Guardando…
+            } @else {
+              <app-icon name="check" [size]="17" />
+              Guardar repostaje
+            }
+          </button>
+          <a routerLink="/app/fuel" class="btn btn-sm mt-2 w-full text-white/60 hover:bg-white/5 hover:text-white">Cancelar</a>
+        </div>
+
+        <div class="card p-5">
+          <div class="flex items-start gap-3">
+            <span class="grid size-8 shrink-0 place-items-center rounded-lg bg-accent/25 text-accent-ink dark:text-accent">
+              <app-icon name="sparkles" [size]="16" />
+            </span>
+            <div>
+              <p class="text-xs font-bold">Cómo calculamos el ahorro</p>
+              <p class="mt-1 text-[11px] leading-relaxed text-muted">
+                Comparamos el precio con la media ponderada de la misma gasolinera. Si es tu primera vez allí,
+                usamos tu repostaje anterior como referencia.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-center gap-1.5 text-[10px] font-medium text-faint">
+          <app-icon name="cloud-off" [size]="12" />
+          Si no hay conexión, se guarda y se envía después.
+        </div>
+      </aside>
+    </form>
+  </div>
+}

@@ -1,0 +1,26 @@
+# Dependencias, builds y datos locales
+**/node_modules/
+**/dist/
+frontend/.angular/
+backend/target/
+backend/data/
+dbconfig/h2/*
+!dbconfig/h2/.gitkeep
+backend/*.log
+frontend/*.log
+
+# Configuración y secretos
+.env
+.env.*
+!.env.example
+backend/src/main/resources/application-local.yml
+
+# Sistema / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+
+# OpenCode
+.opencode/

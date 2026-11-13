@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:carhealth-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  h2:
+    console:
+      enabled: false
+  flyway:
+    enabled: true
+
+app:
+  jwt:
+    secret: carhealth-test-secret-with-enough-length-for-hmac-sha-2026
+  demo-data: false
+  cors:
+    allowed-origins: http://localhost:4200
+
+logging:
+  level:
+    org.hibernate.SQL: warn
+    org.springframework: warn
