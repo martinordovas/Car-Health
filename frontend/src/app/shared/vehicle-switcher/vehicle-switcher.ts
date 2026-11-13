@@ -37,7 +37,7 @@ import { IconComponent } from '../../shared/icon/icon';
 
       @if (open()) {
         <div
-          class="absolute right-0 top-[calc(100%+8px)] z-50 w-[290px] overflow-hidden rounded-2xl border border-line bg-surface shadow-float animate-[scaleIn_160ms_ease-out]"
+          class="absolute left-0 top-[calc(100%+8px)] z-50 w-[290px] max-w-[calc(100vw-5rem)] origin-top-left overflow-hidden rounded-2xl border border-line bg-surface shadow-float animate-[scaleIn_160ms_ease-out]"
           role="listbox"
         >
           <div class="flex items-center justify-between px-4 pb-2 pt-3.5">
@@ -83,6 +83,7 @@ export class VehicleSwitcherComponent {
   readonly open = signal(false);
 
   @HostListener('document:click')
+  @HostListener('document:keydown.escape')
   close(): void {
     this.open.set(false);
   }

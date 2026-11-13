@@ -1,8 +1,15 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { finalize } from 'rxjs';
+import {
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  finalize,
+  of,
+  switchMap,
+} from 'rxjs';
 import {
   dateMedium,
   decimal,
@@ -12,16 +19,19 @@ import {
   nowInputDateTime,
   price,
 } from '../../core/format';
+import { ConnectivityService } from '../../core/connectivity.service';
 import { FuelService } from '../../core/fuel.service';
 import type { FuelLog } from '../../core/models';
+import { PlaceSearchService, type PlaceSuggestion } from '../../core/place-search.service';
 import { VehicleStore } from '../../core/vehicle-store.service';
+import { DateTimePickerComponent } from '../../shared/datetime-picker/datetime-picker';
 import { IconComponent } from '../../shared/icon/icon';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { ToastService } from '../../core/toast.service';
 
 @Component({
   selector: 'app-fuel-form-page',
-  imports: [ReactiveFormsModule, RouterLink, IconComponent, PageHeaderComponent],
+  imports: [ReactiveFormsModule, RouterLink, DateTimePickerComponent, IconComponent, PageHeaderComponent],
   templateUrl: './fuel-form-page.html',
 })
 export class FuelFormPageComponent {
@@ -29,17 +39,26 @@ export class FuelFormPageComponent {
   private readonly router = inject(Router);
   private readonly fuelService = inject(FuelService);
   private readonly toast = inject(ToastService);
+  private readonly places = inject(PlaceSearchService);
   readonly store = inject(VehicleStore);
+  readonly connectivity = inject(ConnectivityService);
 
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
   readonly logs = signal<FuelLog[]>([]);
+  readonly suggestions = signal<PlaceSuggestion[]>([]);
+  readonly searchingLocation = signal(false);
+  readonly locating = signal(false);
+  readonly locationOpen = signal(false);
+  readonly locationError = signal<string | null>(null);
+  private readonly locationCoords = signal<{ lat: number; lon: number } | null>(null);
+  private suppressLocationSearch = false;
 
   readonly form = this.fb.group({
     date: [nowInputDateTime(), [Validators.required]],
     odometer: [0, [Validators.required, Validators.min(1)]],
-    stationName: [''],
-    stationLocation: [''],
+    stationName: ['', [Validators.maxLength(100)]],
+    stationLocation: ['', [Validators.maxLength(160)]],
     liters: [null as number | null, [Validators.required, Validators.min(0.01)]],
     pricePerLiter: [null as number | null, [Validators.required, Validators.min(0.001)]],
     fullTank: [true],
@@ -121,6 +140,36 @@ export class FuelFormPageComponent {
   });
 
   constructor() {
+    this.form.controls.stationLocation.valueChanges
+      .pipe(
+        debounceTime(350),
+        distinctUntilChanged(),
+        switchMap((value) => {
+          const query = value?.trim() ?? '';
+          if (this.suppressLocationSearch || query.length < 3 || !this.connectivity.online()) {
+            this.suggestions.set([]);
+            this.searchingLocation.set(false);
+            return of<PlaceSuggestion[]>([]);
+          }
+          this.searchingLocation.set(true);
+          this.locationError.set(null);
+          return this.places.search(query, this.locationCoords()).pipe(
+            catchError(() => {
+              this.locationError.set(
+                'No hemos podido buscar lugares. Comprueba la conexión o escribe la ubicación a mano.',
+              );
+              return of<PlaceSuggestion[]>([]);
+            }),
+            finalize(() => this.searchingLocation.set(false)),
+          );
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe((places) => {
+        this.suggestions.set(places);
+        this.locationOpen.set(places.length > 0);
+      });
+
     effect(() => {
       const vehicle = this.store.selected();
       if (!vehicle) return;
@@ -132,6 +181,84 @@ export class FuelFormPageComponent {
         untracked(() => this.loadLogs(vehicle.id));
       }
     });
+  }
+
+  useCurrentLocation(): void {
+    if (this.locating()) return;
+    this.locationError.set(null);
+
+    if (!this.connectivity.online()) {
+      this.locationError.set('Sin conexión. Puedes escribir la ubicación a mano.');
+      return;
+    }
+    if (!('geolocation' in navigator)) {
+      this.locationError.set('Tu navegador no permite obtener la ubicación.');
+      return;
+    }
+
+    this.locating.set(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const coords = {
+          lat: position.coords.latitude,
+          lon: position.coords.longitude,
+        };
+        this.locationCoords.set(coords);
+        this.places
+          .reverse(coords.lat, coords.lon)
+          .pipe(finalize(() => this.locating.set(false)))
+          .subscribe({
+            next: (place) => {
+              if (place) {
+                this.selectLocation(place);
+              } else {
+                this.locationError.set(
+                  'Te hemos localizado, pero no hemos encontrado una dirección. Puedes buscarla a mano.',
+                );
+              }
+            },
+            error: () => {
+              this.locationError.set(
+                'Te hemos localizado, pero no hemos podido obtener la dirección. Puedes buscarla a mano.',
+              );
+            },
+          });
+      },
+      (geoError) => {
+        this.locating.set(false);
+        this.locationError.set(
+          geoError.code === geoError.PERMISSION_DENIED
+            ? 'No has dado permiso de ubicación. Puedes buscar escribiendo la dirección.'
+            : 'No hemos podido obtener tu ubicación. Puedes buscar escribiendo la dirección.',
+        );
+      },
+      { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 },
+    );
+  }
+
+  selectLocation(place: PlaceSuggestion): void {
+    this.suppressLocationSearch = true;
+    this.form.controls.stationLocation.setValue(place.label);
+    if (!this.form.controls.stationName.value?.trim()) {
+      this.form.controls.stationName.setValue(place.name);
+    }
+    this.locationCoords.set({ lat: place.lat, lon: place.lon });
+    this.suggestions.set([]);
+    this.locationOpen.set(false);
+    this.locationError.set(null);
+    window.setTimeout(() => {
+      this.suppressLocationSearch = false;
+    }, 600);
+  }
+
+  onLocationBlur(): void {
+    window.setTimeout(() => this.locationOpen.set(false), 180);
+  }
+
+  onLocationFocus(): void {
+    if (this.suggestions().length > 0) {
+      this.locationOpen.set(true);
+    }
   }
 
   submit(): void {
@@ -195,6 +322,7 @@ export class FuelFormPageComponent {
     if (!control || !(control.touched || control.dirty) || !control.invalid) return null;
     if (control.errors?.['required']) return 'Este campo es obligatorio.';
     if (control.errors?.['min']) return 'Introduce un valor válido.';
+    if (control.errors?.['maxlength']) return 'El texto es demasiado largo.';
     if (control.errors?.['belowCurrent']) return 'El odómetro no puede bajar del actual.';
     return 'Revisa este campo.';
   }

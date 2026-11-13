@@ -30,7 +30,8 @@ public final class VehicleDtos {
             LocalDate purchaseDate,
             BigDecimal purchasePrice,
             FuelType fuelType,
-            @Size(max = 32) String color) {
+            @Size(max = 32) String color,
+            @Size(max = 1_000_000) String photoData) {
     }
 
     public record VehicleDto(
@@ -48,6 +49,7 @@ public final class VehicleDtos {
             BigDecimal purchasePrice,
             FuelType fuelType,
             String color,
+            String photoData,
             Instant createdAt) {
     }
 

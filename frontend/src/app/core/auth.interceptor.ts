@@ -2,6 +2,7 @@ import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { OfflineStoreService } from './offline-store.service';
 import { SessionService } from './session.service';
 import { ToastService } from './toast.service';
@@ -12,18 +13,24 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const store = inject(OfflineStoreService);
   const toast = inject(ToastService);
 
+  const isApiRequest = req.url.startsWith(environment.apiUrl) || req.url.startsWith('/api/');
   const isPublicAuth =
     req.url.includes('/auth/login') || req.url.includes('/auth/register');
   const token = session.token();
 
   const request =
-    token && !isPublicAuth
+    token && isApiRequest && !isPublicAuth
       ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
       : req;
 
   return next(request).pipe(
     catchError((error: unknown) => {
-      if (error instanceof HttpErrorResponse && error.status === 401 && !isPublicAuth) {
+      if (
+        error instanceof HttpErrorResponse &&
+        error.status === 401 &&
+        isApiRequest &&
+        !isPublicAuth
+      ) {
         const hadSession = session.token() !== null;
         session.clear();
         void store.clearResponses();

@@ -50,6 +50,10 @@ class ApiFlowIntegrationTest {
         String token = JsonPath.read(registerResult.getResponse().getContentAsString(), "$.token");
         String auth = "Bearer " + token;
 
+        mockMvc.perform(get("/api/v1/health"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ok"));
+
         mockMvc.perform(get("/api/v1/vehicles"))
                 .andExpect(status().isUnauthorized());
 
@@ -60,7 +64,8 @@ class ApiFlowIntegrationTest {
 
         String vehicleBody = """
                 {"brand":"Seat","model":"León","year":2021,"nickname":"Test","currentOdometer":10000,
-                 "fuelType":"GASOLINE_95","licensePlate":"TEST 001"}
+                 "fuelType":"GASOLINE_95","licensePlate":"TEST 001",
+                 "photoData":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="}
                 """;
         MvcResult vehicleResult = mockMvc.perform(post("/api/v1/vehicles")
                         .header(HttpHeaders.AUTHORIZATION, auth)
@@ -69,6 +74,7 @@ class ApiFlowIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name").value("Test"))
                 .andExpect(jsonPath("$.currentOdometer").value(10000))
+                .andExpect(jsonPath("$.photoData").value("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="))
                 .andReturn();
         long vehicleId = ((Number) JsonPath.read(vehicleResult.getResponse().getContentAsString(), "$.id")).longValue();
 

@@ -52,6 +52,8 @@ export class GaragePageComponent {
   readonly passwordOpen = signal(false);
   readonly passwordSaving = signal(false);
   readonly passwordError = signal<string | null>(null);
+  readonly photoProcessing = signal(false);
+  readonly photoError = signal<string | null>(null);
 
   readonly fuelTypes: { value: FuelType; label: string }[] = [
     { value: 'GASOLINE_95', label: 'Gasolina 95' },
@@ -84,6 +86,7 @@ export class GaragePageComponent {
     vin: ['', [Validators.maxLength(40)]],
     purchaseDate: [''],
     purchasePrice: [null as number | null],
+    photoData: [''],
   });
 
   readonly passwordForm = this.fb.group({
@@ -98,6 +101,7 @@ export class GaragePageComponent {
   openAdd(): void {
     this.editing.set(null);
     this.formError.set(null);
+    this.photoError.set(null);
     this.form.reset({
       nickname: '',
       brand: '',
@@ -111,6 +115,7 @@ export class GaragePageComponent {
       vin: '',
       purchaseDate: '',
       purchasePrice: null,
+      photoData: '',
     });
     this.modalOpen.set(true);
   }
@@ -118,6 +123,7 @@ export class GaragePageComponent {
   openEdit(vehicle: Vehicle): void {
     this.editing.set(vehicle);
     this.formError.set(null);
+    this.photoError.set(null);
     this.form.reset({
       nickname: vehicle.nickname ?? '',
       brand: vehicle.brand,
@@ -131,6 +137,7 @@ export class GaragePageComponent {
       vin: vehicle.vin ?? '',
       purchaseDate: vehicle.purchaseDate ?? '',
       purchasePrice: vehicle.purchasePrice ?? null,
+      photoData: vehicle.photoData ?? '',
     });
     this.modalOpen.set(true);
   }
@@ -138,6 +145,7 @@ export class GaragePageComponent {
   closeModal(): void {
     this.modalOpen.set(false);
     this.formError.set(null);
+    this.photoError.set(null);
   }
 
   saveVehicle(): void {
@@ -164,6 +172,7 @@ export class GaragePageComponent {
       vin: (value.vin ?? '').trim() || null,
       purchaseDate: value.purchaseDate || null,
       purchasePrice: value.purchasePrice ? Number(value.purchasePrice) : null,
+      photoData: value.photoData || null,
     };
     this.saving.set(true);
     this.formError.set(null);
@@ -180,10 +189,92 @@ export class GaragePageComponent {
     });
   }
 
+  async onPhotoSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+
+    this.photoError.set(null);
+    if (!file.type.startsWith('image/')) {
+      this.photoError.set('Selecciona un archivo de imagen (JPEG, PNG, WebP o AVIF).');
+      return;
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      this.photoError.set('La imagen original no puede superar los 12 MB.');
+      return;
+    }
+
+    this.photoProcessing.set(true);
+    try {
+      const photo = await this.optimizePhoto(file);
+      this.form.controls.photoData.setValue(photo);
+    } catch (error) {
+      this.photoError.set(
+        error instanceof Error ? error.message : 'No hemos podido procesar la foto.',
+      );
+    } finally {
+      this.photoProcessing.set(false);
+    }
+  }
+
+  removePhoto(): void {
+    this.form.controls.photoData.setValue('');
+    this.photoError.set(null);
+  }
+
+  private async optimizePhoto(file: File): Promise<string> {
+    const source = await this.readFile(file);
+    const image = await this.loadImage(source);
+    const maxWidth = 1600;
+    const maxHeight = 1100;
+    const scale = Math.min(1, maxWidth / image.naturalWidth, maxHeight / image.naturalHeight);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('Tu navegador no permite optimizar la imagen.');
+    }
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.imageSmoothingQuality = 'high';
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    let quality = 0.86;
+    let result = canvas.toDataURL('image/jpeg', quality);
+    while (result.length > 900_000 && quality > 0.45) {
+      quality -= 0.08;
+      result = canvas.toDataURL('image/jpeg', quality);
+    }
+    if (result.length > 1_000_000) {
+      throw new Error('La foto sigue siendo demasiado grande. Prueba con una imagen más pequeña.');
+    }
+    return result;
+  }
+
+  private readFile(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error('No hemos podido leer la foto.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  private loadImage(source: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error('La foto no es una imagen válida.'));
+      image.src = source;
+    });
+  }
+
   deleteVehicle(): void {
     const vehicle = this.editing();
-    if (!vehicle) return;
-    const confirmed = window.confirm(
+    if (!vehicle) return;    const confirmed = window.confirm(
       `¿Eliminar ${vehicle.name}? Se borrarán también todos sus repostajes y mantenimientos. Esta acción no se puede deshacer.`,
     );
     if (!confirmed) return;

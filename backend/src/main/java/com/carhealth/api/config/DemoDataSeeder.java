@@ -68,7 +68,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         VehicleDtos.VehicleDto vehicle = vehicleService.create(demo.getId(), new VehicleDtos.VehicleRequest(
                 "Seat", "León", 2021, "El León", "DPBA", "VSSZZZKLZMR012345", "1234 KLM",
                 31_800, LocalDate.now().minusYears(3), new BigDecimal("21900.00"),
-                FuelType.GASOLINE_95, "Verde oliva"));
+                FuelType.GASOLINE_95, "Verde oliva", null));
 
         seedFuelLogs(demo.getId(), vehicle.id());
         seedServices(demo.getId(), vehicle.id());

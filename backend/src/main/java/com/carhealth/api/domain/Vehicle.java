@@ -65,6 +65,9 @@ public class Vehicle {
     @Column(length = 32)
     private String color;
 
+    @Column(name = "photo_data", length = 1_000_000)
+    private String photoData;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -177,6 +180,14 @@ public class Vehicle {
 
     public void setColor(String color) {
         this.color = color;
+    }
+
+    public String getPhotoData() {
+        return photoData;
+    }
+
+    public void setPhotoData(String photoData) {
+        this.photoData = photoData;
     }
 
     public Instant getCreatedAt() {

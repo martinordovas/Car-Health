@@ -55,8 +55,8 @@
                 </button>
               </div>
             </div>
-            <div class="-mx-4 -mb-6 mt-2 sm:-mr-4">
-              <app-vehicle-visual [label]="km(vehicle.currentOdometer)" />
+            <div class="-mx-5 -mb-5 mt-2 sm:mx-0 sm:mb-0 sm:mt-0">
+              <app-vehicle-visual [label]="km(vehicle.currentOdometer)" [photo]="vehicle.photoData" />
             </div>
           </div>
         </section>
@@ -90,12 +90,16 @@
             @for (vehicle of store.vehicles(); track vehicle.id) {
               <div class="flex items-center gap-3 rounded-2xl border border-line bg-surface-soft/50 p-3">
                 <button type="button" class="flex min-w-0 flex-1 items-center gap-3 text-left" (click)="store.select(vehicle.id)">
-                  <span
-                    class="grid size-10 shrink-0 place-items-center rounded-xl"
-                    [class]="vehicle.id === store.selected()?.id ? 'bg-brand text-accent' : 'bg-surface text-muted'"
-                  >
-                    <app-icon name="car" [size]="18" />
-                  </span>
+                  @if (vehicle.photoData) {
+                    <img [src]="vehicle.photoData" alt="" class="size-10 shrink-0 rounded-xl object-cover" loading="lazy" />
+                  } @else {
+                    <span
+                      class="grid size-10 shrink-0 place-items-center rounded-xl"
+                      [class]="vehicle.id === store.selected()?.id ? 'bg-brand text-accent' : 'bg-surface text-muted'"
+                    >
+                      <app-icon name="car" [size]="18" />
+                    </span>
+                  }
                   <span class="min-w-0 flex-1">
                     <span class="flex items-center gap-2">
                       <span class="truncate text-sm font-bold">{{ vehicle.name }}</span>
@@ -314,6 +318,53 @@
     }
 
     <form [formGroup]="form" (ngSubmit)="saveVehicle()" novalidate class="space-y-4">
+      <div class="flex flex-col gap-3 rounded-2xl border border-dashed border-line bg-surface-soft/60 p-3.5 sm:flex-row sm:items-center">
+        <div class="relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-xl bg-brand sm:w-40">
+          @if (form.controls.photoData.value; as photo) {
+            <img [src]="photo" alt="Foto del vehículo" class="size-full object-cover" />
+          } @else {
+            <span class="grid size-full place-items-center text-white/40">
+              <app-icon name="camera" [size]="26" />
+            </span>
+          }
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="text-xs font-bold">Foto del coche <span class="font-normal text-faint">(opcional)</span></p>
+          <p class="mt-1 text-[10px] leading-relaxed text-muted">
+            Se verá en el dashboard y en tu garaje. Mejor una foto lateral, con buena luz y el coche completo.
+            La optimizamos antes de guardarla.
+          </p>
+          <div class="mt-2.5 flex flex-wrap items-center gap-2">
+            <label class="btn btn-surface btn-sm cursor-pointer" [class.opacity-60]="photoProcessing()">
+              <app-icon [name]="form.controls.photoData.value ? 'pencil' : 'camera'" [size]="14" />
+              {{ form.controls.photoData.value ? 'Cambiar foto' : 'Añadir foto' }}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/avif"
+                class="hidden"
+                (change)="onPhotoSelected($event)"
+                [disabled]="photoProcessing()"
+              />
+            </label>
+            @if (form.controls.photoData.value) {
+              <button type="button" class="btn btn-sm text-danger hover:bg-danger-soft" (click)="removePhoto()" [disabled]="photoProcessing()">
+                <app-icon name="trash" [size]="14" />
+                Quitar
+              </button>
+            }
+            @if (photoProcessing()) {
+              <span class="inline-flex items-center gap-1.5 text-[10px] font-semibold text-muted">
+                <app-icon name="refresh" [size]="12" class="spin-slow" />
+                Optimizando…
+              </span>
+            }
+          </div>
+          @if (photoError()) {
+            <p class="error-text">{{ photoError() }}</p>
+          }
+        </div>
+      </div>
+
       <div class="grid gap-3 sm:grid-cols-2">
         <div>
           <label class="label" for="brand">Marca</label>
@@ -400,7 +451,7 @@
         }
         <div class="flex gap-2">
           <button type="button" class="btn btn-surface btn-sm" (click)="closeModal()" [disabled]="saving()">Cancelar</button>
-          <button type="submit" class="btn btn-primary btn-sm" [disabled]="saving() || !connectivity.online()">
+          <button type="submit" class="btn btn-primary btn-sm" [disabled]="saving() || photoProcessing() || !connectivity.online()">
             @if (saving()) {
               <app-icon name="refresh" [size]="14" class="spin-slow" />
             } @else {

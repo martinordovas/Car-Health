@@ -8,7 +8,21 @@ import { IconComponent } from '../icon/icon';
   selector: 'app-sync-banner',
   imports: [RouterLink, IconComponent],
   template: `
-    @if (!connectivity.online()) {
+    @if (connectivity.degraded()) {
+      <div class="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-info/20 bg-info-soft px-4 py-3 text-info">
+        <span class="grid size-8 shrink-0 place-items-center rounded-full bg-info/10">
+          <app-icon name="cloud-off" [size]="16" />
+        </span>
+        <div class="min-w-0 flex-1">
+          <p class="text-xs font-bold">No llegamos al servidor</p>
+          <p class="text-[11px] opacity-80">Estás viendo la última copia guardada en este dispositivo.</p>
+        </div>
+        <button type="button" class="btn btn-sm bg-info/10 text-info" (click)="queue.flush()" [disabled]="queue.syncing()">
+          <app-icon name="refresh" [size]="14" [class.spin-slow]="queue.syncing()" />
+          Reintentar
+        </button>
+      </div>
+    } @else if (!connectivity.online()) {
       <div class="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-warning/20 bg-warning-soft px-4 py-3 text-warning">
         <span class="grid size-8 shrink-0 place-items-center rounded-full bg-warning/10">
           <app-icon name="cloud-off" [size]="16" />
@@ -28,20 +42,6 @@ import { IconComponent } from '../icon/icon';
             {{ queue.pendingCount() }} pendientes
           </span>
         }
-      </div>
-    } @else if (connectivity.degraded()) {
-      <div class="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-info/20 bg-info-soft px-4 py-3 text-info">
-        <span class="grid size-8 shrink-0 place-items-center rounded-full bg-info/10">
-          <app-icon name="cloud-off" [size]="16" />
-        </span>
-        <div class="min-w-0 flex-1">
-          <p class="text-xs font-bold">No llegamos al servidor</p>
-          <p class="text-[11px] opacity-80">Estás viendo la última copia guardada en este dispositivo.</p>
-        </div>
-        <button type="button" class="btn btn-sm bg-info/10 text-info" (click)="queue.flush()" [disabled]="queue.syncing()">
-          <app-icon name="refresh" [size]="14" [class.spin-slow]="queue.syncing()" />
-          Reintentar
-        </button>
       </div>
     } @else if (queue.syncing()) {
       <div class="mb-5 flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-2.5 text-muted">

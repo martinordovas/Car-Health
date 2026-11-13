@@ -1,13 +1,15 @@
 import { HttpErrorResponse, HttpInterceptorFn, HttpResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, from, of, switchMap, tap, throwError } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { ConnectivityService } from './connectivity.service';
 import { OfflineStoreService } from './offline-store.service';
 import { SessionService } from './session.service';
 import { isNetworkError } from './format';
 
 export const offlineCacheInterceptor: HttpInterceptorFn = (req, next) => {
-  if (req.method !== 'GET' || !req.url.includes('/api/') || req.url.includes('/dossier.pdf')) {
+  const isApiRequest = req.url.startsWith(environment.apiUrl) || req.url.startsWith('/api/');
+  if (req.method !== 'GET' || !isApiRequest || req.url.includes('/dossier.pdf')) {
     return next(req);
   }
 

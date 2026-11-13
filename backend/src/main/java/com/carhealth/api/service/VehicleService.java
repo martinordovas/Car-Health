@@ -92,6 +92,7 @@ public class VehicleService {
                 vehicle.getPurchasePrice(),
                 vehicle.getFuelType(),
                 vehicle.getColor(),
+                vehicle.getPhotoData(),
                 vehicle.getCreatedAt());
     }
 
@@ -108,6 +109,22 @@ public class VehicleService {
         vehicle.setPurchasePrice(request.purchasePrice());
         vehicle.setFuelType(request.fuelType() != null ? request.fuelType() : FuelType.GASOLINE_95);
         vehicle.setColor(trimToNull(request.color()));
+        vehicle.setPhotoData(normalizePhoto(request.photoData()));
+    }
+
+    private String normalizePhoto(String photoData) {
+        String value = trimToNull(photoData);
+        if (value == null) {
+            return null;
+        }
+        boolean supported = value.startsWith("data:image/jpeg;base64,")
+                || value.startsWith("data:image/png;base64,")
+                || value.startsWith("data:image/webp;base64,")
+                || value.startsWith("data:image/avif;base64,");
+        if (!supported) {
+            throw ApiException.badRequest("La foto del vehículo debe ser una imagen JPEG, PNG, WebP o AVIF.");
+        }
+        return value;
     }
 
     private void seedDefaultRules(Vehicle vehicle) {

@@ -33,11 +33,16 @@ No es una hoja de cálculo con otro nombre: calcula lo que de verdad gasta el co
 ### Garaje
 - Alta, edición y eliminación de vehículos.
 - Datos técnicos: marca, modelo, año, matrícula, VIN, código de motor, combustible, color, fecha y precio de compra.
+- Foto real del coche, optimizada en el navegador y mostrada en el hero verde del dashboard y del garaje.
 - Kilometraje actual y cambio rápido de vehículo activo.
 - Plan de mantenimiento preventivo creado automáticamente para cada coche.
 
 ### Repostajes
 - Registro de fecha, odómetro, litros, precio por litro, importe total, gasolinera y ubicación.
+- Selector de fecha y hora propio en español, con calendario, navegación por meses y edición de hora, sin el control nativo del navegador.
+- Búsqueda real de gasolineras, talleres y direcciones con OpenStreetMap/Photon.
+- Categorías y tipos de lugar traducidos al español (gasolinera, taller, concesionario, ciudad, pico…).
+- Botón **«Usar mi ubicación»** para pedir permiso al navegador, obtener las coordenadas y rellenar la dirección.
 - Cálculo automático del **gasto** y del **consumo real full-to-full**.
 - Comparación del precio pagado con la media histórica de esa estación y con el repostaje anterior.
 - Ahorro estimado por repostaje y acumulado.
@@ -74,7 +79,8 @@ No es una hoja de cálculo con otro nombre: calcula lo que de verdad gasta el co
 | Backend | Java 21, Spring Boot 4.1.2, Spring MVC, Spring Data JPA, Spring Security |
 | Autenticación | JWT HS256, BCrypt, API _stateless_ |
 | Base de datos | PostgreSQL 17 en Docker; H2 en modo PostgreSQL para desarrollo local |
-| Migraciones | Flyway (`V1__init_schema.sql`) |
+| Migraciones | Flyway (`V1__init_schema.sql`, `V2__vehicle_photo.sql`) |
+| Geocodificación | Photon / OpenStreetMap + geolocalización del navegador |
 | Documentación | Springdoc OpenAPI 3 + Swagger UI |
 | PDF | OpenPDF |
 | Frontend | Angular 22, standalone components, Signals, zoneless |
@@ -138,7 +144,8 @@ La primera ejecución crea `dbconfig/h2/carhealth.mv.db`, aplica Flyway y siembr
 - API: <http://localhost:8080/api/v1>
 - Swagger UI: <http://localhost:8080/swagger-ui.html>
 - OpenAPI JSON: <http://localhost:8080/v3/api-docs>
-- Healthcheck: <http://localhost:8080/actuator/health>
+- Healthcheck: <http://localhost:8080/api/v1/health>
+- Healthcheck de Spring: <http://localhost:8080/actuator/health>
 - Consola H2 (solo local): <http://localhost:8080/h2-console>
 
 ### 2. Frontend
@@ -207,8 +214,9 @@ La app está diseñada para que perder cobertura no te haga perder un repostaje.
 3. **Escrituras**: si guardas un repostaje o una intervención sin conexión, la petición se guarda en una cola persistente con una vista previa. La UI la muestra como **pendiente**.
 4. **Sincronización**: al recuperar la conexión, la cola se reproduce en orden. Cada mutación lleva un `clientMutationId`; el backend lo usa para no crear duplicados si el reintento se cruza con una respuesta perdida.
 5. **Aislamiento**: las respuestas y la cola se filtran por usuario, de modo que cerrar sesión o cambiar de cuenta no mezcla datos.
+6. **Estado real de conexión**: además de los eventos `online`/`offline` del navegador, la app consulta `GET /api/v1/health` cada 10 segundos. Así detecta también cuando hay red pero el backend no responde, y muestra «Sin conexión» o «Servidor no disponible» en lugar de un falso «En línea».
 
-Los elementos pendientes se pueden reintentar o descartar desde la interfaz. Las operaciones que no son de creación (editar o borrar un coche, por ejemplo) requieren conexión.
+Los elementos pendientes se pueden reintentar o descartar desde la interfaz. Las operaciones que no son de creación (editar o borrar un coche, por ejemplo) requieren conexión. La búsqueda de lugares y el geocodificado inverso necesitan red; el resto de la app sigue funcionando con la copia local.
 
 La estrategia se verificó con una build de producción y Playwright: recarga offline con service worker, alta de repostaje sin red, sincronización automática al volver online y creación de un único registro en el servidor.
 
@@ -240,7 +248,7 @@ cd frontend
 npm test
 ```
 
-Incluye tests de las utilidades de formato (euros, kilómetros, fechas, etiquetas y estados) con Vitest.
+Incluye tests de las utilidades de formato (euros, kilómetros, fechas, etiquetas y estados), de la priorización de resultados de la búsqueda de lugares y del selector de fecha y hora con Vitest.
 
 ### Build de producción
 
@@ -260,6 +268,12 @@ Todas las rutas, salvo registro, login y healthcheck, requieren la cabecera:
 ```http
 Authorization: Bearer <token>
 ```
+
+### Estado del servicio
+
+| Método | Ruta | Descripción |
+| --- | --- | --- |
+| `GET` | `/api/v1/health` | Healthcheck público de la API |
 
 ### Autenticación
 
@@ -395,6 +409,12 @@ La UI muestra los vencidos y próximos en el dashboard y en la pantalla de mante
 | --- | --- | --- |
 | ![Dashboard móvil](docs/screenshots/09-dashboard-mobile.png) | ![Repostajes móvil](docs/screenshots/10-fuel-mobile.png) | ![Estadísticas móvil](docs/screenshots/12-stats-mobile.png) |
 
+### Búsqueda de ubicación real
+
+Al escribir el nombre de una gasolinera, taller o dirección, la app consulta OpenStreetMap/Photon y muestra coincidencias con su dirección. El botón **«Usar mi ubicación»** pide permiso al navegador y rellena la ubicación actual.
+
+![Búsqueda de ubicación](docs/screenshots/15-fuel-location.png)
+
 ---
 
 ## Despliegue con Docker
@@ -452,7 +472,7 @@ Comprobaciones:
 ```bash
 docker compose ps
 docker compose logs -f caddy
-curl -fsS https://carhealth.tudominio.com/actuator/health
+curl -fsS https://carhealth.tudominio.com/api/v1/health
 ```
 
 Caddy enruta `/api/*`, `/swagger-ui*` y `/v3/api-docs*` al backend, y el resto al frontend. En el primer arranque, Flyway crea el esquema en PostgreSQL.
@@ -538,7 +558,8 @@ DB_PASSWORD=carhealth \
 - **H2**: la consola está pensada solo para desarrollo y se desactiva con `H2_CONSOLE=false` en Docker.
 - **Swagger**: se puede desactivar en producción con `SPRINGDOC_ENABLED=false`; si lo dejas activo, recuerda que las rutas de documentación son públicas.
 - **Secretos**: `.env` está ignorado por Git. No subas nunca la contraseña de PostgreSQL ni el secreto JWT.
-- **HTTPS**: Caddy obtiene y renueva los certificados automáticamente si `SITE_ADDRESS` es un dominio real con DNS apuntando al servidor.
+- **HTTPS**: Caddy obtiene y renueva los certificados automáticamente si `SITE_ADDRESS` es un dominio real con DNS apuntando al servidor. La geolocalización del navegador exige HTTPS (o `localhost`).
+- **Geocodificación**: la búsqueda de lugares se envía a `photon.komoot.io`, que usa datos de OpenStreetMap. No se envía el token JWT ni datos del vehículo; solo el texto buscado y, si usas «Usar mi ubicación», las coordenadas. Photon no permite forzar el idioma de los nombres propios (`lang=es` no está soportado): los nombres se muestran tal y como están en OpenStreetMap y la interfaz traduce las categorías al español. Si prefieres no depender de un servicio externo, se puede cambiar el proveedor en `place-search.service.ts`.
 - **Actualizaciones**: el service worker sirve la app desde caché; Nginx fuerza `no-cache` para `ngsw-worker.js` e `index.html` para que las versiones nuevas lleguen en la siguiente carga.
 
 ---

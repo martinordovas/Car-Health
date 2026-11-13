@@ -35,6 +35,7 @@ export interface Vehicle {
   purchasePrice?: number | null;
   fuelType: FuelType;
   color?: string | null;
+  photoData?: string | null;
   createdAt: string;
 }
 
@@ -51,6 +52,7 @@ export interface VehicleInput {
   purchasePrice?: number | null;
   fuelType: FuelType;
   color?: string | null;
+  photoData?: string | null;
 }
 
 export interface SavingsSummary {

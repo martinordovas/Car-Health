@@ -3,6 +3,29 @@ import { Component, input } from '@angular/core';
 @Component({
   selector: 'app-vehicle-visual',
   template: `
+    @if (photo()) {
+      <div class="relative overflow-hidden rounded-[22px] border border-white/15 bg-[#081f15] shadow-[0_24px_60px_-24px_rgba(0,0,0,0.7)]">
+        <img
+          [src]="photo()"
+          alt="Foto del vehículo"
+          class="aspect-[16/10] w-full object-cover"
+          loading="lazy"
+          decoding="async"
+        />
+        <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#071a11]/75 via-transparent to-transparent"></div>
+        <div class="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-3.5">
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/35 px-2.5 py-1 text-[10px] font-bold text-white/80 backdrop-blur">
+            <span class="size-1.5 rounded-full bg-accent"></span>
+            Foto real
+          </span>
+          @if (label()) {
+            <span class="rounded-full border border-accent/30 bg-black/40 px-2.5 py-1 text-[10px] font-bold text-accent backdrop-blur">
+              {{ label() }}
+            </span>
+          }
+        </div>
+      </div>
+    } @else {
     <svg
       class="h-auto w-full overflow-visible"
       viewBox="0 0 640 270"
@@ -122,10 +145,12 @@ import { Component, input } from '@angular/core';
         </g>
       }
     </svg>
+    }
   `,
 })
 export class VehicleVisualComponent {
   readonly label = input<string>('');
+  readonly photo = input<string | null | undefined>(null);
   readonly bodyGradient = `body-${Math.random().toString(36).slice(2, 8)}`;
   readonly glassGradient = `glass-${Math.random().toString(36).slice(2, 8)}`;
   readonly wheelGradient = `wheel-${Math.random().toString(36).slice(2, 8)}`;

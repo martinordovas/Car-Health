@@ -52,7 +52,7 @@
           <div class="grid gap-4 sm:grid-cols-2">
             <div>
               <label class="label" for="date">Fecha y hora</label>
-              <input id="date" type="datetime-local" class="field" formControlName="date" />
+              <app-datetime-picker inputId="date" formControlName="date" [invalid]="!!fieldError('date')" />
               @if (fieldError('date'); as message) {
                 <p class="error-text">{{ message }}</p>
               }
@@ -78,20 +78,97 @@
                 <p class="hint">Ahora mismo el coche marca {{ km(store.selected()?.currentOdometer) }}.</p>
               }
             </div>
-            <div>
+            <div class="sm:col-span-2">
               <label class="label" for="stationName">Gasolinera</label>
               <div class="field-shell">
                 <span class="field-icon"><app-icon name="fuel" [size]="17" /></span>
-                <input id="stationName" class="field" formControlName="stationName" placeholder="Plenoil, Repsol, Cepsa…" />
+                <input id="stationName" class="field" formControlName="stationName" placeholder="Plenoil, Repsol, Cepsa…" maxlength="100" />
               </div>
             </div>
-            <div>
-              <label class="label" for="stationLocation">Ubicación o sucursal</label>
-              <div class="field-shell">
-                <span class="field-icon"><app-icon name="map-pin" [size]="17" /></span>
-                <input id="stationLocation" class="field" formControlName="stationLocation" placeholder="Getafe, A-4 km 12…" />
+            <div class="relative sm:col-span-2">
+              <div class="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+                <label class="label !mb-0" for="stationLocation">Ubicación o sucursal</label>
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1.5 text-[10px] font-bold text-brand transition hover:text-brand-deep disabled:opacity-50 dark:text-accent"
+                  (click)="useCurrentLocation()"
+                  [disabled]="locating()"
+                >
+                  @if (locating()) {
+                    <app-icon name="refresh" [size]="12" class="spin-slow" />
+                    Localizando…
+                  } @else {
+                    <app-icon name="crosshair" [size]="12" />
+                    Usar mi ubicación
+                  }
+                </button>
               </div>
-              <p class="hint">Usamos este dato para comparar precios de la misma estación.</p>
+              <div class="field-shell">
+                <span class="field-icon"><app-icon name="search" [size]="17" /></span>
+                <input
+                  id="stationLocation"
+                  class="field pe-10"
+                  formControlName="stationLocation"
+                  placeholder="Busca una gasolinera, taller o dirección…"
+                  autocomplete="off"
+                  maxlength="160"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  [attr.aria-expanded]="locationOpen()"
+                  aria-controls="place-suggestions"
+                  (focus)="onLocationFocus()"
+                  (blur)="onLocationBlur()"
+                  (keydown.escape)="locationOpen.set(false)"
+                />
+                @if (searchingLocation()) {
+                  <span class="field-suffix">
+                    <app-icon name="refresh" [size]="15" class="spin-slow" />
+                  </span>
+                }
+              </div>
+
+              @if (locationOpen() && suggestions().length > 0) {
+                <div
+                  id="place-suggestions"
+                  class="absolute inset-x-0 top-full z-40 mt-2 overflow-hidden rounded-2xl border border-line bg-surface shadow-float"
+                  role="listbox"
+                >
+                  @for (place of suggestions(); track place.id) {
+                    <button
+                      type="button"
+                      class="flex w-full items-start gap-3 border-b border-line/70 px-3.5 py-3 text-left transition last:border-0 hover:bg-surface-soft"
+                      role="option"
+                      (pointerdown)="$event.preventDefault(); selectLocation(place)"
+                    >
+                      <span class="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand dark:text-accent">
+                        <app-icon name="map-pin" [size]="15" />
+                      </span>
+                      <span class="min-w-0 flex-1">
+                        <span class="block truncate text-xs font-bold">{{ place.name }}</span>
+                        <span class="mt-0.5 block text-[10px] leading-relaxed text-muted">{{ place.address }}</span>
+                      </span>
+                      <span class="chip chip-neutral shrink-0">{{ place.kind }}</span>
+                    </button>
+                  }
+                  <p class="bg-surface-soft px-3.5 py-2 text-[9px] font-medium text-faint">
+                    Búsqueda real con
+                    <a
+                      class="underline decoration-line underline-offset-2 hover:text-ink"
+                      href="https://www.openstreetmap.org/copyright"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >OpenStreetMap</a>.
+                  </p>
+                </div>
+              }
+
+              @if (locationError()) {
+                <p class="error-text">{{ locationError() }}</p>
+              } @else if (!connectivity.online()) {
+                <p class="hint">Sin conexión: escribe la ubicación a mano. La búsqueda volverá al recuperar la red.</p>
+              } @else {
+                <p class="hint">Busca por nombre o dirección, o usa tu ubicación actual para rellenarla.</p>
+              }
             </div>
           </div>
         </section>
