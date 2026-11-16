@@ -1,9 +1,10 @@
 import { Component, HostListener, OnDestroy, input, output } from '@angular/core';
 import { IconComponent } from '../icon/icon';
+import { TranslatePipe } from '../i18n/translate.pipe';
 
 @Component({
   selector: 'app-modal',
-  imports: [IconComponent],
+  imports: [IconComponent, TranslatePipe],
   template: `
     <div class="sheet-backdrop fixed inset-0 z-[80] flex items-end justify-center p-0 sm:items-center sm:p-6" (click)="closed.emit()">
       <div
@@ -19,7 +20,7 @@ import { IconComponent } from '../icon/icon';
               <p class="mt-1 text-sm text-muted">{{ subtitle() }}</p>
             }
           </div>
-          <button class="icon-btn -mr-1 -mt-1 shrink-0" type="button" (click)="closed.emit()" aria-label="Cerrar">
+          <button class="icon-btn -mr-1 -mt-1 shrink-0" type="button" (click)="closed.emit()" [attr.aria-label]="'common.close' | t">
             <app-icon name="x" [size]="19" />
           </button>
         </div>

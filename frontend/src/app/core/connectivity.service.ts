@@ -1,8 +1,10 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { environment } from '../../environments/environment';
+import { I18nService } from './i18n.service';
 
 @Injectable({ providedIn: 'root' })
 export class ConnectivityService {
+  private readonly i18n = inject(I18nService);
   private readonly checkIntervalMs = 10_000;
   private readonly checkTimeoutMs = 5_000;
 
@@ -11,10 +13,11 @@ export class ConnectivityService {
   readonly checking = signal(true);
   readonly offline = computed(() => !this.online() || this.degraded());
   readonly label = computed(() => {
-    if (this.degraded()) return 'Servidor no disponible';
-    if (!this.online()) return 'Sin conexión';
-    if (this.checking()) return 'Comprobando…';
-    return 'En línea';
+    this.i18n.locale();
+    if (this.degraded()) return this.i18n.t('connectivity.serverUnavailable');
+    if (!this.online()) return this.i18n.t('connectivity.offline');
+    if (this.checking()) return this.i18n.t('connectivity.checking');
+    return this.i18n.t('connectivity.online');
   });
 
   private checkInFlight = false;

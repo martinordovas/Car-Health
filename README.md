@@ -37,11 +37,17 @@ No es una hoja de cálculo con otro nombre: calcula lo que de verdad gasta el co
 - Kilometraje actual y cambio rápido de vehículo activo.
 - Plan de mantenimiento preventivo creado automáticamente para cada coche.
 
+### Idiomas
+- Interfaz completa en **español e inglés**, con selector en la cabecera, el login y las preferencias del garaje.
+- Todos los textos viven en diccionarios JSON (`es.json` y `en.json`), incluidos botones, formularios, placeholders, aria-labels, avisos y errores.
+- La preferencia se guarda en el dispositivo y se aplica también a fechas, números, monedas, gráficas y categorías.
+- Los dos diccionarios se validan con un test de paridad de claves.
+
 ### Repostajes
 - Registro de fecha, odómetro, litros, precio por litro, importe total, gasolinera y ubicación.
-- Selector de fecha y hora propio en español, con calendario, navegación por meses y edición de hora, sin el control nativo del navegador.
+- Selector de fecha y hora propio en español e inglés, con calendario, navegación por meses y edición de hora, sin el control nativo del navegador.
 - Búsqueda real de gasolineras, talleres y direcciones con OpenStreetMap/Photon.
-- Categorías y tipos de lugar traducidos al español (gasolinera, taller, concesionario, ciudad, pico…).
+- Categorías y tipos de lugar traducidos al idioma activo (gasolinera, taller, concesionario, ciudad, pico…).
 - Botón **«Usar mi ubicación»** para pedir permiso al navegador, obtener las coordenadas y rellenar la dirección.
 - Cálculo automático del **gasto** y del **consumo real full-to-full**.
 - Comparación del precio pagado con la media histórica de esa estación y con el repostaje anterior.
@@ -84,6 +90,7 @@ No es una hoja de cálculo con otro nombre: calcula lo que de verdad gasta el co
 | Documentación | Springdoc OpenAPI 3 + Swagger UI |
 | PDF | OpenPDF |
 | Frontend | Angular 22, standalone components, Signals, zoneless |
+| Idiomas | Español e inglés con diccionarios JSON, pipe `t` y `I18nService` |
 | Estilos | Tailwind CSS 4, diseño propio con Plus Jakarta Sans |
 | Estado offline | Angular Service Worker + IndexedDB (`idb`) |
 | Tests | JUnit 5 + MockMvc; Vitest mediante el builder de Angular |
@@ -222,6 +229,34 @@ La estrategia se verificó con una build de producción y Playwright: recarga of
 
 ---
 
+## Diccionario de textos
+
+La interfaz no contiene textos literales: todo pasa por `frontend/src/app/i18n/es.json` y `en.json`. Las claves son planas y compartidas por ambos idiomas:
+
+```json
+{
+  "dashboard.emptyTitle": "Tu garaje está esperando.",
+  "dashboard.vehicleToday": "Así va {vehicle} hoy.",
+  "maintenance.partsCount.one": "1 recambio",
+  "maintenance.partsCount.other": "{count} recambios"
+}
+```
+
+En las plantillas se usa el pipe `t`; para textos generados en TypeScript se inyecta `I18nService`:
+
+```html
+<h1>{{ 'dashboard.emptyTitle' | t }}</h1>
+<p>{{ 'dashboard.vehicleToday' | t: { vehicle: vehicle.name } }}</p>
+```
+
+```ts
+this.toast.success(this.i18n.t('garage.toastUpdated'));
+```
+
+`I18nService` guarda la preferencia en `localStorage`, actualiza `<html lang>`, el título y la meta descripción, y propaga el idioma a fechas, números, moneda y etiquetas. Para añadir otro idioma basta con crear su JSON, registrarlo en `core/i18n.ts` y añadir la opción al selector.
+
+---
+
 ## Tests
 
 ### Backend
@@ -248,7 +283,7 @@ cd frontend
 npm test
 ```
 
-Incluye tests de las utilidades de formato (euros, kilómetros, fechas, etiquetas y estados), de la priorización de resultados de la búsqueda de lugares y del selector de fecha y hora con Vitest.
+Incluye tests de las utilidades de formato (euros, kilómetros, fechas, etiquetas y estados), de la priorización de resultados de la búsqueda de lugares, del selector de fecha y hora y de la paridad de claves entre los diccionarios de idioma con Vitest.
 
 ### Build de producción
 
@@ -409,6 +444,12 @@ La UI muestra los vencidos y próximos en el dashboard y en la pantalla de mante
 | --- | --- | --- |
 | ![Dashboard móvil](docs/screenshots/09-dashboard-mobile.png) | ![Repostajes móvil](docs/screenshots/10-fuel-mobile.png) | ![Estadísticas móvil](docs/screenshots/12-stats-mobile.png) |
 
+### Interfaz en inglés
+
+El selector **ES / EN** cambia toda la aplicación al instante y recuerda la preferencia en el dispositivo.
+
+![Dashboard en inglés](docs/screenshots/16-dashboard-english.png)
+
 ### Búsqueda de ubicación real
 
 Al escribir el nombre de una gasolinera, taller o dirección, la app consulta OpenStreetMap/Photon y muestra coincidencias con su dirección. El botón **«Usar mi ubicación»** pide permiso al navegador y rellena la ubicación actual.
@@ -529,10 +570,11 @@ DB_PASSWORD=carhealth \
 │   └── pom.xml
 ├── frontend/
 │   ├── src/app/
-│   │   ├── core/            # Auth, modelos, stores, caché y cola offline
+│   │   ├── core/            # Auth, modelos, stores, caché, cola offline e i18n
 │   │   ├── features/        # Auth, dashboard, fuel, maintenance, stats, garage
+│   │   ├── i18n/            # Diccionarios es.json y en.json
 │   │   ├── layout/          # Shell con sidebar, bottom nav y FAB
-│   │   └── shared/          # Iconos, gráficas, modales y componentes UI
+│   │   └── shared/          # Iconos, gráficas, modales, idioma y componentes UI
 │   ├── public/              # Iconos PWA y fuentes
 │   ├── ngsw-config.json
 │   ├── Dockerfile

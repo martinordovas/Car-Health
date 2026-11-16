@@ -1,17 +1,18 @@
 import { Component, inject } from '@angular/core';
 import { ThemeService } from '../../core/theme.service';
 import { IconComponent } from '../icon/icon';
+import { TranslatePipe } from '../i18n/translate.pipe';
 
 @Component({
   selector: 'app-theme-toggle',
-  imports: [IconComponent],
+  imports: [IconComponent, TranslatePipe],
   template: `
     <button
       type="button"
       class="icon-btn relative overflow-hidden"
       (click)="theme.toggle()"
-      [attr.aria-label]="theme.dark() ? 'Activar modo claro' : 'Activar modo oscuro'"
-      [attr.title]="theme.dark() ? 'Modo claro' : 'Modo oscuro'"
+      [attr.aria-label]="(theme.dark() ? 'theme.activateLight' : 'theme.activateDark') | t"
+      [attr.title]="(theme.dark() ? 'theme.light' : 'theme.dark') | t"
     >
       <span class="transition-transform duration-300" [class.rotate-[360deg]]="!theme.dark()">
         <app-icon [name]="theme.dark() ? 'sun' : 'moon'" [size]="18" />

@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { HttpErrorResponse } from '@angular/common/http';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { setActiveLocale } from './i18n';
 import {
   categoryLabel,
   consumption,
@@ -20,6 +22,8 @@ import {
 } from './format';
 
 describe('format helpers', () => {
+  beforeEach(() => setActiveLocale('es'));
+
   it('formatea importes en euros con dos decimales', () => {
     expect(money(12345.5)).toMatch(/12\.345,50\s€/);
     expect(money(0)).toMatch(/0,00\s€/);
@@ -46,7 +50,7 @@ describe('format helpers', () => {
   });
 
   it('muestra precios de carburante con tres decimales', () => {
-    expect(price(1.549)).toBe('1,549 €');
+    expect(price(1.549)).toMatch(/1,549\s€/);
     expect(price(null)).toBe('—');
   });
 
@@ -100,5 +104,32 @@ describe('format helpers', () => {
   it('extrae el mensaje de error de una respuesta ProblemDetail', () => {
     expect(errorMessage(new Error('Fallo de red'))).toBe('Fallo de red');
     expect(errorMessage(null)).toBe('Ha ocurrido un error inesperado.');
+  });
+
+  it('traduce los mensajes conocidos del backend al inglés', () => {
+    setActiveLocale('en');
+    const unauthorized = new HttpErrorResponse({
+      status: 401,
+      error: { detail: 'Correo o contraseña incorrectos.' },
+    });
+    expect(errorMessage(unauthorized)).toBe('Incorrect email or password.');
+
+    const invalid = new HttpErrorResponse({
+      status: 400,
+      error: {
+        detail: 'Revisa los campos marcados e inténtalo de nuevo.',
+        errors: { odometer: 'debe ser mayor que o igual a 0' },
+      },
+    });
+    expect(errorMessage(invalid)).toBe('Must be greater than or equal to 0.');
+  });
+
+  it('cambia formato y etiquetas al inglés', () => {
+    setActiveLocale('en');
+    expect(money(1234.5)).toMatch(/€1,234\.50/);
+    expect(percent(12.34)).toBe('12.3%');
+    expect(categoryLabel('CORRECTIVE')).toBe('Repair');
+    expect(statusLabel('DUE_SOON')).toBe('Due soon');
+    expect(remainingDays(3)).toBe('3 days left');
   });
 });

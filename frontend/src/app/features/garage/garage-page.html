@@ -1,17 +1,17 @@
 <div class="page-enter">
   <app-page-header
-    eyebrow="Configuración"
-    title="Mi garaje"
-    subtitle="Tus coches, tu cuenta y los datos que viven en este dispositivo."
+    [eyebrow]="'garage.eyebrow' | t"
+    [title]="'garage.title' | t"
+    [subtitle]="'garage.subtitle' | t"
   >
     <button type="button" class="btn btn-primary" (click)="openAdd()">
       <app-icon name="plus" [size]="17" />
-      Añadir coche
+      {{ 'garage.addCar' | t }}
     </button>
   </app-page-header>
 
   <div class="grid items-start gap-4 lg:grid-cols-12">
-    <div class="space-y-4 lg:col-span-8">
+    <div class="min-w-0 space-y-4 lg:col-span-8">
       @if (store.selected(); as vehicle) {
         <section class="hero-card p-5 sm:p-7">
           <div class="relative z-10 grid items-center gap-2 sm:grid-cols-[1.1fr_0.9fr]">
@@ -19,7 +19,7 @@
               <div class="flex flex-wrap items-center gap-2">
                 <span class="chip border border-white/15 bg-white/10 text-white/70">
                   <span class="size-1.5 rounded-full bg-accent"></span>
-                  Coche activo
+                  {{ 'garage.activeCar' | t }}
                 </span>
                 @if (vehicle.licensePlate) {
                   <span class="rounded-md border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-bold tracking-[0.1em] text-white/80">{{ vehicle.licensePlate }}</span>
@@ -30,11 +30,15 @@
 
               <div class="mt-6 grid grid-cols-2 gap-4">
                 <div>
-                  <p class="text-[9px] font-bold uppercase tracking-[0.12em] text-white/35">Kilómetros</p>
+                  <p class="text-[9px] font-bold uppercase tracking-[0.12em] text-white/35">
+                    {{ 'garage.km' | t }}
+                  </p>
                   <p class="metric-value mt-1 text-xl text-white">{{ km(vehicle.currentOdometer) }}</p>
                 </div>
                 <div>
-                  <p class="text-[9px] font-bold uppercase tracking-[0.12em] text-white/35">Desde</p>
+                  <p class="text-[9px] font-bold uppercase tracking-[0.12em] text-white/35">
+                    {{ 'garage.since' | t }}
+                  </p>
                   <p class="metric-value mt-1 text-xl text-white">{{ vehicle.purchaseDate ? dateMedium(vehicle.purchaseDate) : vehicle.year }}</p>
                 </div>
               </div>
@@ -42,15 +46,15 @@
               <div class="mt-6 flex flex-wrap gap-2">
                 <button type="button" class="btn btn-sm border border-white/20 bg-white/10 text-white hover:bg-white/15" (click)="openEdit(vehicle)">
                   <app-icon name="pencil" [size]="14" />
-                  Editar
+                  {{ 'garage.edit' | t }}
                 </button>
                 <button type="button" class="btn btn-accent btn-sm" (click)="downloadDossier(vehicle)" [disabled]="downloading() !== null">
                   @if (downloading() === vehicle.id) {
                     <app-icon name="refresh" [size]="14" class="spin-slow" />
-                    Generando…
+                    {{ 'garage.generating' | t }}
                   } @else {
                     <app-icon name="download" [size]="14" />
-                    Dossier PDF
+                    {{ 'garage.dossier' | t }}
                   }
                 </button>
               </div>
@@ -64,17 +68,17 @@
         <section class="card overflow-hidden">
           <div class="bg-surface-soft p-6 sm:p-8">
             <div class="mx-auto max-w-sm">
-              <app-vehicle-visual label="Tu garaje" />
+              <app-vehicle-visual [label]="'garage.emptyVisualLabel' | t" />
             </div>
           </div>
           <div class="p-6 text-center">
-            <h2 class="text-xl font-bold">Tu garaje está vacío</h2>
+            <h2 class="text-xl font-bold">{{ 'garage.emptyTitle' | t }}</h2>
             <p class="mx-auto mt-2 max-w-md text-sm text-muted">
-              Añade tu coche para empezar con el plan de mantenimiento, los repostajes y la analítica.
+              {{ 'garage.emptyDescription' | t }}
             </p>
             <button type="button" class="btn btn-primary mt-5" (click)="openAdd()">
               <app-icon name="plus" [size]="17" />
-              Añadir mi primer coche
+              {{ 'garage.addFirstCar' | t }}
             </button>
           </div>
         </section>
@@ -83,7 +87,7 @@
       @if (store.vehicles().length > 0) {
         <section class="card p-4 sm:p-5">
           <div class="mb-3 flex items-center justify-between">
-            <h2 class="text-sm font-bold">Tus coches</h2>
+            <h2 class="text-sm font-bold">{{ 'garage.yourCars' | t }}</h2>
             <span class="chip chip-neutral">{{ store.vehicles().length }}</span>
           </div>
           <div class="space-y-2">
@@ -104,7 +108,7 @@
                     <span class="flex items-center gap-2">
                       <span class="truncate text-sm font-bold">{{ vehicle.name }}</span>
                       @if (vehicle.id === store.selected()?.id) {
-                        <span class="chip chip-success">Activo</span>
+                        <span class="chip chip-success">{{ 'garage.active' | t }}</span>
                       }
                     </span>
                     <span class="mt-0.5 block truncate text-[11px] text-muted">
@@ -112,7 +116,14 @@
                     </span>
                   </span>
                 </button>
-                <button type="button" class="icon-btn size-8 shrink-0" (click)="openEdit(vehicle)" [attr.aria-label]="'Editar ' + vehicle.name">
+                <button
+                  type="button"
+                  class="icon-btn size-8 shrink-0"
+                  (click)="openEdit(vehicle)"
+                  [attr.aria-label]="
+                    'garage.editVehicleAria' | t: { vehicle: vehicle.name }
+                  "
+                >
                   <app-icon name="pencil" [size]="15" />
                 </button>
               </div>
@@ -120,7 +131,7 @@
           </div>
           <button type="button" class="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-line py-3 text-xs font-semibold text-muted transition hover:border-brand/30 hover:bg-surface-soft hover:text-ink" (click)="openAdd()">
             <app-icon name="plus" [size]="15" />
-            Añadir otro coche
+            {{ 'garage.addAnother' | t }}
           </button>
         </section>
       }
@@ -132,16 +143,25 @@
               <app-icon [name]="connectivity.offline() ? 'cloud-off' : 'check-circle'" [size]="17" />
             </span>
             <div>
-              <h2 class="text-sm font-bold">Cambios en este dispositivo</h2>
+              <h2 class="text-sm font-bold">{{ 'garage.deviceChangesTitle' | t }}</h2>
               <p class="mt-0.5 text-[11px] text-muted">
-                {{ queue.totalCount() === 0 ? 'Todo sincronizado con el servidor.' : queue.totalCount() + (queue.totalCount() === 1 ? ' cambio pendiente' : ' cambios pendientes') }}
+                @if (queue.totalCount() === 0) {
+                  {{ 'garage.synced' | t }}
+                } @else {
+                  {{
+                    (queue.totalCount() === 1
+                      ? 'garage.pendingChanges.one'
+                      : 'garage.pendingChanges.other'
+                    ) | t: { count: queue.totalCount() }
+                  }}
+                }
               </p>
             </div>
           </div>
           @if (queue.totalCount() > 0) {
             <button type="button" class="btn btn-surface btn-sm" (click)="syncNow()" [disabled]="queue.syncing() || connectivity.offline()">
               <app-icon name="sync" [size]="14" [class.spin-slow]="queue.syncing()" />
-              Sincronizar
+              {{ 'garage.sync' | t }}
             </button>
           }
         </div>
@@ -158,7 +178,7 @@
                     <div class="flex flex-wrap items-center gap-1.5">
                       <p class="text-xs font-bold">{{ item.label }}</p>
                       <span class="chip" [class]="item.status === 'pending' ? 'chip-warning' : 'chip-danger'">
-                        {{ item.status === 'pending' ? 'Pendiente' : 'Error' }}
+                        {{ (item.status === 'pending' ? 'garage.pending' : 'garage.error') | t }}
                       </span>
                     </div>
                     <p class="mt-1 text-[10px] text-muted">{{ queueDate(item.createdAt) }}</p>
@@ -168,11 +188,23 @@
                   </div>
                   <div class="flex shrink-0 gap-1">
                     @if (item.status === 'failed') {
-                      <button type="button" class="icon-btn size-8" (click)="retryQueueItem(item)" title="Reintentar" aria-label="Reintentar cambio">
+                      <button
+                        type="button"
+                        class="icon-btn size-8"
+                        (click)="retryQueueItem(item)"
+                        [attr.title]="'common.retry' | t"
+                        [attr.aria-label]="'garage.retryAria' | t"
+                      >
                         <app-icon name="refresh" [size]="14" />
                       </button>
                     }
-                    <button type="button" class="icon-btn size-8 hover:text-danger" (click)="discardQueueItem(item)" title="Descartar" aria-label="Descartar cambio">
+                    <button
+                      type="button"
+                      class="icon-btn size-8 hover:text-danger"
+                      (click)="discardQueueItem(item)"
+                      [attr.title]="'garage.discardAria' | t"
+                      [attr.aria-label]="'garage.discardAria' | t"
+                    >
                       <app-icon name="trash" [size]="14" />
                     </button>
                   </div>
@@ -183,12 +215,12 @@
         }
         <p class="mt-3 flex items-start gap-1.5 text-[10px] leading-relaxed text-faint">
           <app-icon name="info" [size]="12" class="mt-0.5 shrink-0" />
-          Los cambios sin conexión se guardan aquí y se envían automáticamente al recuperar la red.
+          {{ 'garage.localInfo' | t }}
         </p>
       </section>
     </div>
 
-    <aside class="space-y-4 lg:col-span-4">
+    <aside class="min-w-0 space-y-4 lg:col-span-4">
       <section class="card p-5">
         <div class="flex items-center gap-3">
           <span class="grid size-11 shrink-0 place-items-center rounded-full bg-brand-soft text-sm font-extrabold text-brand dark:text-accent">
@@ -201,7 +233,7 @@
         </div>
 
         <div class="mt-5">
-          <label class="label" for="profileName">Nombre visible</label>
+          <label class="label" for="profileName">{{ 'garage.profileName' | t }}</label>
           <input id="profileName" class="field" [value]="profileName()" (input)="updateProfileName($event)" maxlength="80" />
           <button
             type="button"
@@ -214,30 +246,34 @@
             } @else {
               <app-icon name="check" [size]="14" />
             }
-            Guardar nombre
+            {{ 'garage.saveName' | t }}
           </button>
         </div>
 
         <div class="mt-4 border-t border-line pt-4">
           <button type="button" class="flex w-full items-center justify-between text-left" (click)="passwordOpen.set(!passwordOpen())">
-            <span class="text-xs font-bold">Contraseña</span>
+            <span class="text-xs font-bold">{{ 'garage.password' | t }}</span>
             <app-icon name="chevron-down" [size]="15" class="text-faint transition-transform" [class.rotate-180]="passwordOpen()" />
           </button>
           @if (passwordOpen()) {
             <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="mt-3 space-y-2.5">
               <div>
-                <label class="label" for="currentPassword">Contraseña actual</label>
+                <label class="label" for="currentPassword">{{
+                  'garage.currentPassword' | t
+                }}</label>
                 <input id="currentPassword" type="password" class="field" formControlName="currentPassword" autocomplete="current-password" />
               </div>
               <div>
-                <label class="label" for="newPassword">Nueva contraseña</label>
+                <label class="label" for="newPassword">{{ 'garage.newPassword' | t }}</label>
                 <input id="newPassword" type="password" class="field" formControlName="newPassword" autocomplete="new-password" />
                 @if (passwordForm.controls.newPassword.touched && passwordForm.controls.newPassword.invalid) {
-                  <p class="error-text">Mínimo 8 caracteres.</p>
+                  <p class="error-text">{{ 'garage.min8' | t }}</p>
                 }
               </div>
               <div>
-                <label class="label" for="confirmPassword">Repite la nueva</label>
+                <label class="label" for="confirmPassword">{{
+                  'garage.repeatNewPassword' | t
+                }}</label>
                 <input id="confirmPassword" type="password" class="field" formControlName="confirmPassword" autocomplete="new-password" />
               </div>
               @if (passwordError()) {
@@ -246,9 +282,9 @@
               <button type="submit" class="btn btn-primary btn-sm w-full" [disabled]="passwordSaving()">
                 @if (passwordSaving()) {
                   <app-icon name="refresh" [size]="14" class="spin-slow" />
-                  Guardando…
+                  {{ 'garage.saving' | t }}
                 } @else {
-                  Actualizar contraseña
+                  {{ 'garage.updatePassword' | t }}
                 }
               </button>
             </form>
@@ -257,15 +293,26 @@
       </section>
 
       <section class="card p-5">
-        <h2 class="text-sm font-bold">Preferencias</h2>
-        <button type="button" class="mt-4 flex w-full items-center justify-between gap-4 rounded-xl bg-surface-soft px-3 py-3 text-left" (click)="theme.toggle()">
+        <h2 class="text-sm font-bold">{{ 'garage.preferences' | t }}</h2>
+        <div class="mt-4 flex items-center justify-between gap-4 rounded-xl bg-surface-soft px-3 py-3">
+          <span class="flex items-center gap-2.5">
+            <span class="grid size-8 place-items-center rounded-lg bg-surface text-muted">
+              <app-icon name="languages" [size]="16" />
+            </span>
+            <span class="block text-xs font-bold">{{ 'garage.language' | t }}</span>
+          </span>
+          <app-language-toggle />
+        </div>
+        <button type="button" class="mt-3 flex w-full items-center justify-between gap-4 rounded-xl bg-surface-soft px-3 py-3 text-left" (click)="theme.toggle()">
           <span class="flex items-center gap-2.5">
             <span class="grid size-8 place-items-center rounded-lg bg-surface text-muted">
               <app-icon [name]="theme.dark() ? 'moon' : 'sun'" [size]="16" />
             </span>
             <span>
-              <span class="block text-xs font-bold">{{ theme.dark() ? 'Modo oscuro' : 'Modo claro' }}</span>
-              <span class="block text-[10px] text-faint">Se guarda en este dispositivo</span>
+              <span class="block text-xs font-bold">{{
+                (theme.dark() ? 'garage.darkMode' : 'garage.lightMode') | t
+              }}</span>
+              <span class="block text-[10px] text-faint">{{ 'garage.savedDevice' | t }}</span>
             </span>
           </span>
           <span class="relative h-6 w-11 shrink-0 rounded-full transition-colors" [class.bg-brand]="theme.dark()" [class.bg-surface-strong]="!theme.dark()">
@@ -279,35 +326,41 @@
           </span>
           <div>
             <p class="text-[11px] font-bold">{{ connectivity.label() }}</p>
-            <p class="mt-0.5 text-[10px] leading-relaxed text-faint">La app guarda una copia local de tus datos para consultarlos sin cobertura.</p>
+            <p class="mt-0.5 text-[10px] leading-relaxed text-faint">
+              {{ 'garage.localCopy' | t }}
+            </p>
           </div>
         </div>
       </section>
 
       <section class="card p-5">
-        <h2 class="text-sm font-bold">Sesión</h2>
-        <p class="mt-1 text-[11px] leading-relaxed text-muted">Tu token se guarda en este dispositivo para mantener la sesión abierta.</p>
+        <h2 class="text-sm font-bold">{{ 'garage.sessionTitle' | t }}</h2>
+        <p class="mt-1 text-[11px] leading-relaxed text-muted">
+          {{ 'garage.sessionDescription' | t }}
+        </p>
         <button type="button" class="btn btn-danger mt-4 w-full" (click)="logout()">
           <app-icon name="logout" [size]="16" />
-          Cerrar sesión
+          {{ 'garage.logout' | t }}
         </button>
       </section>
 
-      <p class="text-center text-[10px] font-medium uppercase tracking-[0.12em] text-faint">Car Health · v1.0 · offline first</p>
+      <p class="text-center text-[10px] font-medium uppercase tracking-[0.12em] text-faint">
+        {{ 'garage.footer' | t }}
+      </p>
     </aside>
   </div>
 </div>
 
 @if (modalOpen()) {
   <app-modal
-    [title]="editing() ? 'Editar coche' : 'Añadir coche'"
-    [subtitle]="editing() ? 'Actualiza los datos del vehículo.' : 'Crearemos su plan de mantenimiento automáticamente.'"
+    [title]="(editing() ? 'garage.modalEditTitle' : 'garage.modalAddTitle') | t"
+    [subtitle]="(editing() ? 'garage.modalEditSubtitle' : 'garage.modalAddSubtitle') | t"
     (closed)="closeModal()"
   >
     @if (!connectivity.online()) {
       <div class="mb-4 flex items-start gap-2 rounded-xl border border-warning/20 bg-warning-soft px-3 py-2.5 text-warning">
         <app-icon name="cloud-off" [size]="15" class="mt-0.5 shrink-0" />
-        <p class="text-[11px] font-semibold leading-relaxed">Necesitas conexión para guardar un vehículo. Los repostajes y mantenimientos sí funcionan offline.</p>
+        <p class="text-[11px] font-semibold leading-relaxed">{{ 'garage.offlineWarning' | t }}</p>
       </div>
     }
     @if (formError()) {
@@ -321,7 +374,11 @@
       <div class="flex flex-col gap-3 rounded-2xl border border-dashed border-line bg-surface-soft/60 p-3.5 sm:flex-row sm:items-center">
         <div class="relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-xl bg-brand sm:w-40">
           @if (form.controls.photoData.value; as photo) {
-            <img [src]="photo" alt="Foto del vehículo" class="size-full object-cover" />
+            <img
+              [src]="photo"
+              [attr.alt]="'garage.photoAlt' | t"
+              class="size-full object-cover"
+            />
           } @else {
             <span class="grid size-full place-items-center text-white/40">
               <app-icon name="camera" [size]="26" />
@@ -329,15 +386,22 @@
           }
         </div>
         <div class="min-w-0 flex-1">
-          <p class="text-xs font-bold">Foto del coche <span class="font-normal text-faint">(opcional)</span></p>
+          <p class="text-xs font-bold">
+            {{ 'garage.photoTitle' | t }}
+            <span class="font-normal text-faint">{{ 'common.optional' | t }}</span>
+          </p>
           <p class="mt-1 text-[10px] leading-relaxed text-muted">
-            Se verá en el dashboard y en tu garaje. Mejor una foto lateral, con buena luz y el coche completo.
-            La optimizamos antes de guardarla.
+            {{ 'garage.photoDescription' | t }}
           </p>
           <div class="mt-2.5 flex flex-wrap items-center gap-2">
             <label class="btn btn-surface btn-sm cursor-pointer" [class.opacity-60]="photoProcessing()">
               <app-icon [name]="form.controls.photoData.value ? 'pencil' : 'camera'" [size]="14" />
-              {{ form.controls.photoData.value ? 'Cambiar foto' : 'Añadir foto' }}
+              {{
+                (form.controls.photoData.value
+                  ? 'garage.changePhoto'
+                  : 'garage.addPhoto'
+                ) | t
+              }}
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/avif"
@@ -349,13 +413,13 @@
             @if (form.controls.photoData.value) {
               <button type="button" class="btn btn-sm text-danger hover:bg-danger-soft" (click)="removePhoto()" [disabled]="photoProcessing()">
                 <app-icon name="trash" [size]="14" />
-                Quitar
+                {{ 'garage.removePhoto' | t }}
               </button>
             }
             @if (photoProcessing()) {
               <span class="inline-flex items-center gap-1.5 text-[10px] font-semibold text-muted">
                 <app-icon name="refresh" [size]="12" class="spin-slow" />
-                Optimizando…
+                {{ 'garage.optimizing' | t }}
               </span>
             }
           </div>
@@ -367,71 +431,113 @@
 
       <div class="grid gap-3 sm:grid-cols-2">
         <div>
-          <label class="label" for="brand">Marca</label>
-          <input id="brand" class="field" formControlName="brand" placeholder="Seat" [class.field-error]="fieldError('brand')" />
+          <label class="label" for="brand">{{ 'garage.brandLabel' | t }}</label>
+          <input
+            id="brand"
+            class="field"
+            formControlName="brand"
+            [attr.placeholder]="'garage.brandPlaceholder' | t"
+            [class.field-error]="fieldError('brand')"
+          />
           @if (fieldError('brand'); as message) {
             <p class="error-text">{{ message }}</p>
           }
         </div>
         <div>
-          <label class="label" for="model">Modelo</label>
-          <input id="model" class="field" formControlName="model" placeholder="León" [class.field-error]="fieldError('model')" />
+          <label class="label" for="model">{{ 'garage.modelLabel' | t }}</label>
+          <input
+            id="model"
+            class="field"
+            formControlName="model"
+            [attr.placeholder]="'garage.modelPlaceholder' | t"
+            [class.field-error]="fieldError('model')"
+          />
           @if (fieldError('model'); as message) {
             <p class="error-text">{{ message }}</p>
           }
         </div>
         <div class="sm:col-span-2">
-          <label class="label" for="nickname">Mote <span class="font-normal text-faint">(opcional)</span></label>
-          <input id="nickname" class="field" formControlName="nickname" placeholder="El León" />
+          <label class="label" for="nickname">{{
+            'garage.nicknameLabel' | t
+          }} <span class="font-normal text-faint">{{ 'common.optional' | t }}</span></label>
+          <input
+            id="nickname"
+            class="field"
+            formControlName="nickname"
+            [attr.placeholder]="'garage.nicknamePlaceholder' | t"
+          />
         </div>
         <div>
-          <label class="label" for="year">Año</label>
+          <label class="label" for="year">{{ 'garage.yearLabel' | t }}</label>
           <input id="year" type="number" class="field" formControlName="year" [class.field-error]="fieldError('year')" />
           @if (fieldError('year'); as message) {
             <p class="error-text">{{ message }}</p>
           }
         </div>
         <div>
-          <label class="label" for="currentOdometer">Kilómetros</label>
+          <label class="label" for="currentOdometer">{{ 'garage.odometerLabel' | t }}</label>
           <div class="field-shell">
             <span class="field-icon"><app-icon name="gauge" [size]="15" /></span>
             <input id="currentOdometer" type="number" class="field field-unit" formControlName="currentOdometer" [class.field-error]="fieldError('currentOdometer')" />
-            <span class="field-suffix">km</span>
+            <span class="field-suffix">{{ 'common.km' | t }}</span>
           </div>
           @if (fieldError('currentOdometer'); as message) {
             <p class="error-text">{{ message }}</p>
           }
         </div>
         <div>
-          <label class="label" for="licensePlate">Matrícula</label>
-          <input id="licensePlate" class="field" formControlName="licensePlate" placeholder="1234 KLM" />
+          <label class="label" for="licensePlate">{{ 'garage.plateLabel' | t }}</label>
+          <input
+            id="licensePlate"
+            class="field"
+            formControlName="licensePlate"
+            [attr.placeholder]="'garage.platePlaceholder' | t"
+          />
         </div>
         <div>
-          <label class="label" for="fuelType">Combustible</label>
+          <label class="label" for="fuelType">{{ 'garage.fuelLabel' | t }}</label>
           <select id="fuelType" class="field" formControlName="fuelType">
-            @for (fuel of fuelTypes; track fuel.value) {
+            @for (fuel of fuelTypes(); track fuel.value) {
               <option [value]="fuel.value">{{ fuel.label }}</option>
             }
           </select>
         </div>
         <div>
-          <label class="label" for="color">Color</label>
-          <input id="color" class="field" formControlName="color" placeholder="Verde oliva" />
+          <label class="label" for="color">{{ 'garage.colorLabel' | t }}</label>
+          <input
+            id="color"
+            class="field"
+            formControlName="color"
+            [attr.placeholder]="'garage.colorPlaceholder' | t"
+          />
         </div>
         <div>
-          <label class="label" for="engineCode">Código de motor</label>
-          <input id="engineCode" class="field" formControlName="engineCode" placeholder="DPBA" />
+          <label class="label" for="engineCode">{{ 'garage.engineLabel' | t }}</label>
+          <input
+            id="engineCode"
+            class="field"
+            formControlName="engineCode"
+            [attr.placeholder]="'garage.enginePlaceholder' | t"
+          />
         </div>
         <div class="sm:col-span-2">
-          <label class="label" for="vin">VIN <span class="font-normal text-faint">(opcional)</span></label>
-          <input id="vin" class="field" formControlName="vin" placeholder="VSSZZZ..." />
+          <label class="label" for="vin"
+            >{{ 'garage.vinLabel' | t }}
+            <span class="font-normal text-faint">{{ 'common.optional' | t }}</span></label
+          >
+          <input
+            id="vin"
+            class="field"
+            formControlName="vin"
+            [attr.placeholder]="'garage.vinPlaceholder' | t"
+          />
         </div>
         <div>
-          <label class="label" for="purchaseDate">Fecha de compra</label>
+          <label class="label" for="purchaseDate">{{ 'garage.purchaseDateLabel' | t }}</label>
           <input id="purchaseDate" type="date" class="field" formControlName="purchaseDate" />
         </div>
         <div>
-          <label class="label" for="purchasePrice">Precio de compra</label>
+          <label class="label" for="purchasePrice">{{ 'garage.purchasePriceLabel' | t }}</label>
           <div class="field-shell">
             <span class="field-icon"><app-icon name="euro" [size]="15" /></span>
             <input id="purchasePrice" type="number" class="field field-unit" formControlName="purchasePrice" placeholder="21900" />
@@ -444,20 +550,27 @@
         @if (editing()) {
           <button type="button" class="btn btn-danger btn-sm" (click)="deleteVehicle()" [disabled]="saving()">
             <app-icon name="trash" [size]="14" />
-            Eliminar
+            {{ 'garage.delete' | t }}
           </button>
         } @else {
           <span></span>
         }
         <div class="flex gap-2">
-          <button type="button" class="btn btn-surface btn-sm" (click)="closeModal()" [disabled]="saving()">Cancelar</button>
+          <button
+            type="button"
+            class="btn btn-surface btn-sm"
+            (click)="closeModal()"
+            [disabled]="saving()"
+          >
+            {{ 'garage.cancel' | t }}
+          </button>
           <button type="submit" class="btn btn-primary btn-sm" [disabled]="saving() || photoProcessing() || !connectivity.online()">
             @if (saving()) {
               <app-icon name="refresh" [size]="14" class="spin-slow" />
             } @else {
               <app-icon name="check" [size]="14" />
             }
-            {{ editing() ? 'Guardar cambios' : 'Añadir coche' }}
+            {{ (editing() ? 'garage.saveChanges' : 'garage.addCarSubmit') | t }}
           </button>
         </div>
       </div>

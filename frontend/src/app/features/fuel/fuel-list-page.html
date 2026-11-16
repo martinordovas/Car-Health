@@ -1,26 +1,30 @@
 @if (!store.selected()) {
-  <app-page-header eyebrow="Combustible" title="Repostajes" subtitle="Cada depósito cuenta. Aquí está tu historial completo." />
+  <app-page-header
+    [eyebrow]="'fuel.list.eyebrow' | t"
+    [title]="'fuel.list.title' | t"
+    [subtitle]="'fuel.list.subtitle' | t"
+  />
   <div class="card">
     <app-empty-state
-      title="Primero necesitas un coche"
-      description="Añade tu vehículo para empezar a registrar repostajes y calcular el consumo real."
+      [title]="'fuel.list.noCarTitle' | t"
+      [description]="'fuel.list.noCarDescription' | t"
     >
       <a routerLink="/app/garage" class="btn btn-primary">
         <app-icon name="plus" [size]="16" />
-        Añadir coche
+        {{ 'fuel.list.addCar' | t }}
       </a>
     </app-empty-state>
   </div>
 } @else {
   <div class="page-enter">
     <app-page-header
-      eyebrow="Combustible"
-      title="Repostajes"
-      [subtitle]="'Todo el historial de ' + (store.selected()?.name ?? 'tu coche') + ': consumo real y ahorro por gasolinera.'"
+      [eyebrow]="'fuel.list.eyebrow' | t"
+      [title]="'fuel.list.title' | t"
+      [subtitle]="'fuel.list.subtitleWithVehicle' | t: { vehicle: vehicleName() }"
     >
       <a routerLink="/app/fuel/new" class="btn btn-primary">
         <app-icon name="plus" [size]="17" />
-        Nuevo repostaje
+        {{ 'fuel.list.newFuel' | t }}
       </a>
     </app-page-header>
 
@@ -39,22 +43,22 @@
         <span class="mx-auto grid size-14 place-items-center rounded-2xl bg-warning-soft text-warning">
           <app-icon name="cloud-off" [size]="26" />
         </span>
-        <h2 class="mt-5 text-lg font-bold">No hay repostajes disponibles offline</h2>
+        <h2 class="mt-5 text-lg font-bold">{{ 'fuel.list.offlineErrorTitle' | t }}</h2>
         <p class="mt-2 text-sm text-muted">{{ error() }}</p>
         <button class="btn btn-primary mt-5" type="button" (click)="retry()">
           <app-icon name="refresh" [size]="17" />
-          Reintentar
+          {{ 'common.retry' | t }}
         </button>
       </div>
     } @else if (displayLogs().length === 0) {
       <div class="card">
         <app-empty-state
-          title="Todavía no has repostado"
-          description="Apunta tu primer repostaje para empezar a calcular consumo real, precio medio y ahorro."
+          [title]="'fuel.list.emptyTitle' | t"
+          [description]="'fuel.list.emptyDescription' | t"
         >
           <a routerLink="/app/fuel/new" class="btn btn-primary">
             <app-icon name="fuel" [size]="17" />
-            Apuntar repostaje
+            {{ 'fuel.list.addFuel' | t }}
           </a>
         </app-empty-state>
       </div>
@@ -67,14 +71,10 @@
               <app-icon name="trend-down" [size]="23" />
             </span>
             <div>
-              <p class="eyebrow mb-1">Tu ahorro comparando precios</p>
+              <p class="eyebrow mb-1">{{ 'fuel.list.savingsEyebrow' | t }}</p>
               <p class="text-2xl font-bold tracking-[-0.04em] sm:text-3xl">{{ money(totalSavings()) }}</p>
               <p class="mt-1 max-w-md text-xs leading-relaxed text-muted">
-                @if (totalSavings() > 0) {
-                  Calculado frente a tu media histórica por gasolinera y tu repostaje anterior.
-                } @else {
-                  Cuando repitas en una gasolinera o cambies de precio, empezaremos a medir tu ahorro real.
-                }
+                {{ (totalSavings() > 0 ? 'fuel.list.savingsPositive' : 'fuel.list.savingsEmpty') | t }}
               </p>
             </div>
           </div>
@@ -82,11 +82,14 @@
             @if (pendingCount() > 0) {
               <span class="chip chip-warning">
                 <app-icon name="clock" [size]="12" />
-                {{ pendingCount() }} sin sincronizar
+                {{
+                  (pendingCount() === 1 ? 'fuel.list.pendingSync.one' : 'fuel.list.pendingSync.other')
+                    | t: { count: pendingCount() }
+                }}
               </span>
             }
             <a routerLink="/app/stats" class="btn btn-surface btn-sm">
-              Ver analítica
+              {{ 'fuel.list.viewAnalytics' | t }}
               <app-icon name="arrow-right" [size]="14" />
             </a>
           </div>
@@ -95,19 +98,27 @@
 
       <div class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div class="card-flat p-4">
-          <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">Gasto total</p>
+          <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">
+            {{ 'fuel.list.totalSpent' | t }}
+          </p>
           <p class="metric-value mt-2 text-lg sm:text-xl">{{ money(totalSpent()) }}</p>
         </div>
         <div class="card-flat p-4">
-          <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">Precio medio</p>
+          <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">
+            {{ 'fuel.list.avgPrice' | t }}
+          </p>
           <p class="metric-value mt-2 text-lg sm:text-xl">{{ price(avgPrice()) }}</p>
         </div>
         <div class="card-flat p-4">
-          <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">Consumo medio</p>
+          <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">
+            {{ 'fuel.list.avgConsumption' | t }}
+          </p>
           <p class="metric-value mt-2 text-lg sm:text-xl">{{ consumption(avgConsumption()) }}</p>
         </div>
         <div class="card-flat p-4">
-          <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">Repostajes</p>
+          <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">
+            {{ 'fuel.list.fills' | t }}
+          </p>
           <p class="metric-value mt-2 text-lg sm:text-xl">{{ displayLogs().length }}</p>
         </div>
       </div>
@@ -134,15 +145,22 @@
 
                   <div class="min-w-0 flex-1">
                     <div class="flex items-center gap-2">
-                      <p class="truncate text-sm font-bold">{{ log.stationName || 'Sin gasolinera' }}</p>
+                      <p class="truncate text-sm font-bold">
+                        {{ log.stationName || ('fuel.list.noStation' | t) }}
+                      </p>
                       @if (log.pending) {
-                        <span class="chip chip-warning hidden sm:inline-flex">Pendiente</span>
+                        <span class="chip chip-warning hidden sm:inline-flex">{{
+                          'fuel.list.pending' | t
+                        }}</span>
                       }
                     </div>
                     <p class="mt-0.5 truncate text-[11px] text-muted">
                       {{ dateMedium(log.date) }} · {{ formatLiters(log.liters) }} · {{ price(log.pricePerLiter) }}/L
                     </p>
-                    <p class="mt-0.5 text-[10px] text-faint">{{ km(log.odometer) }} · {{ log.fullTank ? 'Depósito lleno' : 'Repostaje parcial' }}</p>
+                    <p class="mt-0.5 text-[10px] text-faint">
+                      {{ km(log.odometer) }} ·
+                      {{ (log.fullTank ? 'fuel.list.fullTank' : 'fuel.list.partial') | t }}
+                    </p>
                   </div>
 
                   <div class="shrink-0 text-right">
@@ -155,7 +173,9 @@
                         <span class="text-[10px] font-semibold text-faint">{{ consumption(log.consumption) }}</span>
                       }
                       @if (log.pending) {
-                        <span class="chip chip-warning sm:hidden">Pendiente</span>
+                        <span class="chip chip-warning sm:hidden">{{
+                          'fuel.list.pending' | t
+                        }}</span>
                       }
                     </div>
                   </div>

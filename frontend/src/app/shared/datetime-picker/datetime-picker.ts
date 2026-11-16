@@ -1,5 +1,7 @@
-import { Component, HostListener, computed, forwardRef, input, signal } from '@angular/core';
+import { Component, HostListener, computed, forwardRef, inject, input, signal } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { I18nService } from '../../core/i18n.service';
+import type { Locale } from '../../core/i18n';
 import { IconComponent } from '../icon/icon';
 
 interface CalendarDay {
@@ -10,38 +12,36 @@ interface CalendarDay {
   selected: boolean;
 }
 
-const MONTHS = [
-  'enero',
-  'febrero',
-  'marzo',
-  'abril',
-  'mayo',
-  'junio',
-  'julio',
-  'agosto',
-  'septiembre',
-  'octubre',
-  'noviembre',
-  'diciembre',
-];
+interface DateFormats {
+  monthYear: Intl.DateTimeFormat;
+  weekdayShort: Intl.DateTimeFormat;
+  dayMonthYear: Intl.DateTimeFormat;
+  fullDate: Intl.DateTimeFormat;
+  weekdayNarrow: Intl.DateTimeFormat;
+}
 
-const MONTHS_SHORT = [
-  'ene',
-  'feb',
-  'mar',
-  'abr',
-  'may',
-  'jun',
-  'jul',
-  'ago',
-  'sep',
-  'oct',
-  'nov',
-  'dic',
-];
+const formatCache = new Map<Locale, DateFormats>();
 
-const WEEKDAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-const WEEKDAYS_SHORT = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+function dateFormats(locale: Locale): DateFormats {
+  const cached = formatCache.get(locale);
+  if (cached) return cached;
+
+  const tag = locale === 'en' ? 'en-GB' : 'es-ES';
+  const formats: DateFormats = {
+    monthYear: new Intl.DateTimeFormat(tag, { month: 'long', year: 'numeric' }),
+    weekdayShort: new Intl.DateTimeFormat(tag, { weekday: 'short' }),
+    dayMonthYear: new Intl.DateTimeFormat(tag, { day: 'numeric', month: 'short', year: 'numeric' }),
+    fullDate: new Intl.DateTimeFormat(tag, {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }),
+    weekdayNarrow: new Intl.DateTimeFormat(tag, { weekday: 'narrow' }),
+  };
+  formatCache.set(locale, formats);
+  return formats;
+}
 
 function pad(value: number): string {
   return String(value).padStart(2, '0');
@@ -100,7 +100,7 @@ function capitalize(value: string): string {
           [disabled]="disabled()"
           [attr.aria-expanded]="open()"
           aria-haspopup="dialog"
-          [attr.aria-label]="'Fecha y hora: ' + valueLabel()"
+          [attr.aria-label]="i18n.t('datePicker.fieldAria', { value: valueLabel() })"
           (click)="toggle()"
         >
           <span class="min-w-0 flex-1 truncate" [class.text-faint]="!selected()">{{
@@ -124,13 +124,13 @@ function capitalize(value: string): string {
         <div
           class="fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-[70] max-h-[calc(100dvh-7rem)] origin-bottom overflow-y-auto overscroll-contain rounded-[22px] border border-line bg-surface shadow-float animate-[scaleIn_160ms_ease-out] sm:absolute sm:inset-auto sm:left-0 sm:top-[calc(100%+8px)] sm:z-50 sm:max-h-none sm:w-[336px] sm:origin-top-left sm:overflow-hidden"
           role="dialog"
-          aria-label="Seleccionar fecha y hora"
+          [attr.aria-label]="i18n.t('datePicker.dialogAria')"
         >
           <div class="flex items-center justify-between gap-2 px-3 pb-1 pt-3">
             <button
               type="button"
               class="icon-btn size-8"
-              aria-label="Mes anterior"
+              [attr.aria-label]="i18n.t('datePicker.previousMonth')"
               (click)="moveMonth(-1)"
             >
               <app-icon name="chevron-left" [size]="17" />
@@ -139,7 +139,7 @@ function capitalize(value: string): string {
             <button
               type="button"
               class="icon-btn size-8"
-              aria-label="Mes siguiente"
+              [attr.aria-label]="i18n.t('datePicker.nextMonth')"
               (click)="moveMonth(1)"
             >
               <app-icon name="chevron-right" [size]="17" />
@@ -147,7 +147,7 @@ function capitalize(value: string): string {
           </div>
 
           <div class="grid grid-cols-7 gap-1 px-3 pb-1 pt-2 text-center">
-            @for (weekday of weekdays; track weekday) {
+            @for (weekday of weekdays(); track weekday) {
               <span class="text-[9px] font-[800] uppercase tracking-[0.08em] text-faint">{{
                 weekday
               }}</span>
@@ -174,14 +174,16 @@ function capitalize(value: string): string {
           >
             <div class="flex items-center gap-1.5">
               <app-icon name="clock" [size]="14" class="text-faint" />
-              <span class="text-[9px] font-[800] uppercase tracking-[0.1em] text-faint">Hora</span>
+              <span class="text-[9px] font-[800] uppercase tracking-[0.1em] text-faint">{{
+                i18n.t('datePicker.hour')
+              }}</span>
               <div class="ms-1 flex items-center gap-1">
                 <input
                   type="text"
                   inputmode="numeric"
                   maxlength="2"
                   class="time-part"
-                  aria-label="Horas"
+                  [attr.aria-label]="i18n.t('datePicker.hoursAria')"
                   autocomplete="off"
                   [value]="hourDraft()"
                   [disabled]="disabled()"
@@ -197,7 +199,7 @@ function capitalize(value: string): string {
                   inputmode="numeric"
                   maxlength="2"
                   class="time-part"
-                  aria-label="Minutos"
+                  [attr.aria-label]="i18n.t('datePicker.minutesAria')"
                   autocomplete="off"
                   [value]="minuteDraft()"
                   [disabled]="disabled()"
@@ -209,19 +211,23 @@ function capitalize(value: string): string {
                 />
               </div>
             </div>
-            <span class="text-[9px] font-medium text-faint">24 h</span>
+            <span class="text-[9px] font-medium text-faint">{{
+              i18n.t('datePicker.24h')
+            }}</span>
           </div>
 
           <div class="flex items-center justify-between gap-2 border-t border-line px-3 py-2">
             <div class="flex items-center gap-1">
               <button type="button" class="btn btn-ghost btn-sm px-2.5" (click)="setToday()">
-                Hoy
+                {{ i18n.t('datePicker.today') }}
               </button>
               <button type="button" class="btn btn-ghost btn-sm px-2.5" (click)="setNow()">
-                Ahora
+                {{ i18n.t('datePicker.now') }}
               </button>
             </div>
-            <button type="button" class="btn btn-primary btn-sm" (click)="close()">Listo</button>
+            <button type="button" class="btn btn-primary btn-sm" (click)="close()">
+              {{ i18n.t('datePicker.done') }}
+            </button>
           </div>
         </div>
       }
@@ -229,6 +235,7 @@ function capitalize(value: string): string {
   `,
 })
 export class DateTimePickerComponent implements ControlValueAccessor {
+  readonly i18n = inject(I18nService);
   readonly inputId = input('date');
   readonly invalid = input(false);
   readonly disabled = signal(false);
@@ -240,17 +247,33 @@ export class DateTimePickerComponent implements ControlValueAccessor {
   readonly hourDraft = signal(pad(new Date().getHours()));
   readonly minuteDraft = signal(pad(new Date().getMinutes()));
 
-  readonly weekdays = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
-
-  readonly valueLabel = computed(() => {
-    const date = this.selected();
-    if (!date) return 'Selecciona fecha y hora';
-    return `${capitalize(WEEKDAYS_SHORT[date.getDay()])}, ${date.getDate()} ${MONTHS_SHORT[date.getMonth()]} ${date.getFullYear()} · ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  readonly weekdays = computed(() => {
+    const formats = dateFormats(this.i18n.locale());
+    return Array.from({ length: 7 }, (_, index) =>
+      formats.weekdayNarrow.format(new Date(2024, 0, 1 + index, 12)),
+    );
   });
 
-  readonly monthLabel = computed(
-    () => `${capitalize(MONTHS[this.viewMonth()])} ${this.viewYear()}`,
-  );
+  readonly valueLabel = computed(() => {
+    const locale = this.i18n.locale();
+    const date = this.selected();
+    if (!date) return this.i18n.t('datePicker.placeholder');
+
+    const formats = dateFormats(locale);
+    const weekday = capitalize(formats.weekdayShort.format(date).replace(/\./g, ''));
+    const day = formats.dayMonthYear.format(date).replace(/\./g, '');
+    return `${weekday}, ${day} · ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  });
+
+  readonly monthLabel = computed(() => {
+    const locale = this.i18n.locale();
+    const parts = dateFormats(locale).monthYear.formatToParts(
+      new Date(this.viewYear(), this.viewMonth(), 1, 12),
+    );
+    const month = parts.find((part) => part.type === 'month')?.value ?? '';
+    const year = parts.find((part) => part.type === 'year')?.value ?? '';
+    return capitalize(`${month} ${year}`.trim());
+  });
 
   readonly days = computed<CalendarDay[]>(() => {
     const year = this.viewYear();
@@ -420,7 +443,7 @@ export class DateTimePickerComponent implements ControlValueAccessor {
   }
 
   dayAria(day: CalendarDay): string {
-    return `${WEEKDAYS[day.date.getDay()]}, ${day.date.getDate()} de ${MONTHS[day.date.getMonth()]} de ${day.date.getFullYear()}`;
+    return capitalize(dateFormats(this.i18n.locale()).fullDate.format(day.date));
   }
 
   @HostListener('document:click')

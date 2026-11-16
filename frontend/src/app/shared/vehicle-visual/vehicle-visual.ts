@@ -1,13 +1,15 @@
 import { Component, input } from '@angular/core';
+import { TranslatePipe } from '../i18n/translate.pipe';
 
 @Component({
   selector: 'app-vehicle-visual',
+  imports: [TranslatePipe],
   template: `
     @if (photo()) {
       <div class="relative overflow-hidden rounded-[22px] border border-white/15 bg-[#081f15] shadow-[0_24px_60px_-24px_rgba(0,0,0,0.7)]">
         <img
           [src]="photo()"
-          alt="Foto del vehículo"
+          [attr.alt]="'vehicleVisual.alt' | t"
           class="aspect-[16/10] w-full object-cover"
           loading="lazy"
           decoding="async"
@@ -16,7 +18,7 @@ import { Component, input } from '@angular/core';
         <div class="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-3.5">
           <span class="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/35 px-2.5 py-1 text-[10px] font-bold text-white/80 backdrop-blur">
             <span class="size-1.5 rounded-full bg-accent"></span>
-            Foto real
+            {{ 'vehicleVisual.realPhoto' | t }}
           </span>
           @if (label()) {
             <span class="rounded-full border border-accent/30 bg-black/40 px-2.5 py-1 text-[10px] font-bold text-accent backdrop-blur">
@@ -31,7 +33,7 @@ import { Component, input } from '@angular/core';
       viewBox="0 0 640 270"
       fill="none"
       role="img"
-      aria-label="Ilustración del vehículo"
+      [attr.aria-label]="'vehicleVisual.illustrationAria' | t"
     >
       <defs>
         <linearGradient [attr.id]="bodyGradient" x1="110" y1="88" x2="510" y2="218" gradientUnits="userSpaceOnUse">

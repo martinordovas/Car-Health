@@ -3,6 +3,7 @@ import { DateTimePickerComponent } from './datetime-picker';
 
 describe('DateTimePickerComponent', () => {
   beforeEach(async () => {
+    localStorage.setItem('ch-locale', 'es');
     await TestBed.configureTestingModule({
       imports: [DateTimePickerComponent],
     }).compileComponents();

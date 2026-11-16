@@ -3,13 +3,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
-import {
-  errorMessage,
-  money,
-  PERFORMED_BY_LABELS,
-  todayInputDate,
-  km,
-} from '../../core/format';
+import { errorMessage, money, ruleName, todayInputDate, km } from '../../core/format';
+import { I18nService } from '../../core/i18n.service';
 import { MaintenanceService } from '../../core/maintenance.service';
 import type {
   MaintenanceRule,
@@ -22,6 +17,7 @@ import { ServiceRecordService } from '../../core/service-record.service';
 import { ToastService } from '../../core/toast.service';
 import { VehicleStore } from '../../core/vehicle-store.service';
 import { IconComponent } from '../../shared/icon/icon';
+import { TranslatePipe } from '../../shared/i18n/translate.pipe';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 
 interface CategoryOption {
@@ -32,7 +28,7 @@ interface CategoryOption {
 
 @Component({
   selector: 'app-service-form-page',
-  imports: [ReactiveFormsModule, RouterLink, IconComponent, PageHeaderComponent],
+  imports: [ReactiveFormsModule, RouterLink, IconComponent, PageHeaderComponent, TranslatePipe],
   templateUrl: './service-form-page.html',
 })
 export class ServiceFormPageComponent {
@@ -40,6 +36,7 @@ export class ServiceFormPageComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly maintenanceService = inject(MaintenanceService);
+  private readonly i18n = inject(I18nService);
   private readonly serviceRecordService = inject(ServiceRecordService);
   private readonly toast = inject(ToastService);
   readonly store = inject(VehicleStore);
@@ -47,17 +44,57 @@ export class ServiceFormPageComponent {
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
   readonly rules = signal<MaintenanceRule[]>([]);
+  readonly vehicleName = computed(
+    () => this.store.selected()?.name ?? this.i18n.t('common.yourCar'),
+  );
 
-  readonly categories: CategoryOption[] = [
-    { value: 'PREVENTIVE', label: 'Preventivo', hint: 'Mantenimiento planificado' },
-    { value: 'CORRECTIVE', label: 'Reparación', hint: 'Algo que se ha roto' },
-    { value: 'MODIFICATION', label: 'Mejora', hint: 'Mejora o accesorio' },
-    { value: 'LEGAL', label: 'Legal', hint: 'ITV, seguro, trámites' },
-  ];
+  readonly categories = computed<CategoryOption[]>(() => {
+    this.i18n.locale();
+    return [
+      {
+        value: 'PREVENTIVE',
+        label: this.i18n.t('serviceForm.categoryPreventive'),
+        hint: this.i18n.t('serviceForm.categoryPreventiveHint'),
+      },
+      {
+        value: 'CORRECTIVE',
+        label: this.i18n.t('serviceForm.categoryCorrective'),
+        hint: this.i18n.t('serviceForm.categoryCorrectiveHint'),
+      },
+      {
+        value: 'MODIFICATION',
+        label: this.i18n.t('serviceForm.categoryModification'),
+        hint: this.i18n.t('serviceForm.categoryModificationHint'),
+      },
+      {
+        value: 'LEGAL',
+        label: this.i18n.t('serviceForm.categoryLegal'),
+        hint: this.i18n.t('serviceForm.categoryLegalHint'),
+      },
+    ];
+  });
+
+  readonly performedByOptions = computed<{ value: PerformedBy; label: string; hint: string }[]>(
+    () => {
+      this.i18n.locale();
+      return [
+        {
+          value: 'DIY',
+          label: this.i18n.t('serviceForm.diy'),
+          hint: this.i18n.t('serviceForm.diyHint'),
+        },
+        {
+          value: 'WORKSHOP',
+          label: this.i18n.t('serviceForm.workshop'),
+          hint: this.i18n.t('serviceForm.workshopHint'),
+        },
+      ];
+    },
+  );
 
   protected readonly money = money;
   protected readonly km = km;
-  protected readonly performedByLabels = PERFORMED_BY_LABELS;
+  protected readonly ruleName = ruleName;
 
   private readonly queryParams = this.route.snapshot.queryParamMap;
   private readonly preselectedRuleId = Number(this.queryParams.get('ruleId')) || null;
@@ -75,7 +112,9 @@ export class ServiceFormPageComponent {
     parts: this.fb.array([]),
   });
 
-  private readonly formValues = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
+  private readonly formValues = toSignal(this.form.valueChanges, {
+    initialValue: this.form.getRawValue(),
+  });
   private currentVehicleId: number | null = null;
 
   readonly partsCost = computed(() => {
@@ -142,9 +181,9 @@ export class ServiceFormPageComponent {
   partError(index: number, field: string): string | null {
     const control = this.partGroups()[index]?.get(field);
     if (!control || !(control.touched || control.dirty) || !control.invalid) return null;
-    if (control.errors?.['required']) return 'Obligatorio.';
-    if (control.errors?.['min']) return 'Valor no válido.';
-    return 'Revisa este campo.';
+    if (control.errors?.['required']) return this.i18n.t('garage.errorFieldRequired');
+    if (control.errors?.['min']) return this.i18n.t('common.invalidValue');
+    return this.i18n.t('common.reviewField');
   }
 
   setPerformedBy(value: PerformedBy): void {
@@ -155,7 +194,9 @@ export class ServiceFormPageComponent {
     this.form.controls.category.setValue(value);
   }
 
-  categoryIcon(value: ServiceCategory | null | undefined): 'shield' | 'wrench' | 'sparkles' | 'file-text' {
+  categoryIcon(
+    value: ServiceCategory | null | undefined,
+  ): 'shield' | 'wrench' | 'sparkles' | 'file-text' {
     switch (value) {
       case 'CORRECTIVE':
         return 'wrench';
@@ -169,10 +210,12 @@ export class ServiceFormPageComponent {
   }
 
   applyRule(): void {
-    const rule = this.rules().find((candidate) => candidate.id === Number(this.form.controls.ruleId.value));
+    const rule = this.rules().find(
+      (candidate) => candidate.id === Number(this.form.controls.ruleId.value),
+    );
     if (!rule) return;
     if (!(this.form.controls.title.value ?? '').trim()) {
-      this.form.controls.title.setValue(rule.name);
+      this.form.controls.title.setValue(ruleName(rule.name));
     }
     this.form.controls.category.setValue(rule.category);
   }
@@ -180,10 +223,10 @@ export class ServiceFormPageComponent {
   fieldError(name: string): string | null {
     const control = this.form.get(name);
     if (!control || !(control.touched || control.dirty) || !control.invalid) return null;
-    if (control.errors?.['required']) return 'Este campo es obligatorio.';
-    if (control.errors?.['min']) return 'Introduce un valor válido.';
-    if (control.errors?.['maxlength']) return 'El texto es demasiado largo.';
-    return 'Revisa este campo.';
+    if (control.errors?.['required']) return this.i18n.t('common.required');
+    if (control.errors?.['min']) return this.i18n.t('common.invalidValue');
+    if (control.errors?.['maxlength']) return this.i18n.t('common.tooLong');
+    return this.i18n.t('common.reviewField');
   }
 
   submit(): void {
@@ -191,12 +234,12 @@ export class ServiceFormPageComponent {
     this.error.set(null);
     const vehicle = this.store.selected();
     if (!vehicle) {
-      this.error.set('Añade un coche antes de registrar una intervención.');
+      this.error.set(this.i18n.t('serviceForm.noVehicle'));
       return;
     }
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      this.error.set('Revisa los campos marcados antes de guardar.');
+      this.error.set(this.i18n.t('serviceForm.reviewFields'));
       return;
     }
 
@@ -232,9 +275,9 @@ export class ServiceFormPageComponent {
       .subscribe({
         next: (record) => {
           if (record.pending) {
-            this.toast.info('Mantenimiento guardado en el dispositivo. Se sincronizará al volver online.');
+            this.toast.info(this.i18n.t('serviceForm.toastSavedOffline'));
           } else {
-            this.toast.success('Intervención registrada. El plan de mantenimiento ya está actualizado.');
+            this.toast.success(this.i18n.t('serviceForm.toastRegistered'));
           }
           void this.router.navigate(['/app/services']);
         },

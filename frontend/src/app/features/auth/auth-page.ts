@@ -4,8 +4,11 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth.service';
-import { errorMessage } from '../../core/format';
+import { errorMessage, km, money } from '../../core/format';
+import { I18nService } from '../../core/i18n.service';
 import { IconComponent } from '../../shared/icon/icon';
+import { LanguageToggleComponent } from '../../shared/i18n/language-toggle';
+import { TranslatePipe } from '../../shared/i18n/translate.pipe';
 import { LogoComponent } from '../../shared/logo/logo';
 import { VehicleVisualComponent } from '../../shared/vehicle-visual/vehicle-visual';
 
@@ -17,7 +20,15 @@ function passwordsMatch(control: AbstractControl): ValidationErrors | null {
 
 @Component({
   selector: 'app-auth-page',
-  imports: [ReactiveFormsModule, RouterLink, IconComponent, LogoComponent, VehicleVisualComponent],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    IconComponent,
+    LanguageToggleComponent,
+    LogoComponent,
+    TranslatePipe,
+    VehicleVisualComponent,
+  ],
   templateUrl: './auth-page.html',
 })
 export class AuthPageComponent {
@@ -25,9 +36,12 @@ export class AuthPageComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly i18n = inject(I18nService);
 
   readonly isRegister = this.route.snapshot.data['mode'] === 'register';
   readonly isDemo = environment.demo;
+  protected readonly km = km;
+  protected readonly money = money;
   readonly loading = signal(false);
   readonly showPassword = signal(false);
   readonly error = signal<string | null>(null);
@@ -82,18 +96,18 @@ export class AuthPageComponent {
   fieldError(field: string): string | null {
     const control = this.form.get(field);
     if (!control || !control.invalid || !(control.touched || control.dirty)) return null;
-    if (control.errors?.['required']) return 'Este campo es obligatorio.';
-    if (control.errors?.['email']) return 'Introduce un correo válido.';
-    if (control.errors?.['minlength']) return 'La contraseña debe tener al menos 8 caracteres.';
-    if (control.errors?.['maxlength']) return 'El texto es demasiado largo.';
-    return 'Revisa este campo.';
+    if (control.errors?.['required']) return this.i18n.t('common.required');
+    if (control.errors?.['email']) return this.i18n.t('auth.error.email');
+    if (control.errors?.['minlength']) return this.i18n.t('auth.error.passwordMin');
+    if (control.errors?.['maxlength']) return this.i18n.t('common.tooLong');
+    return this.i18n.t('common.reviewField');
   }
 
   confirmError(): string | null {
     const control = this.form.get('confirmPassword');
     if (!control || !(control.touched || control.dirty)) return null;
-    if (control.errors?.['required']) return 'Repite la contraseña.';
-    if (this.form.errors?.['mismatch']) return 'Las contraseñas no coinciden.';
+    if (control.errors?.['required']) return this.i18n.t('auth.error.confirmRequired');
+    if (this.form.errors?.['mismatch']) return this.i18n.t('auth.error.mismatch');
     return null;
   }
 

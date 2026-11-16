@@ -9,7 +9,7 @@ type Tone = 'brand' | 'accent' | 'success' | 'warning' | 'danger' | 'info' | 'ne
   template: `
     <div class="card card-hover h-full p-5">
       <div class="flex items-start justify-between gap-3">
-        <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">{{ label() }}</p>
+        <p class="min-w-0 break-words text-[11px] font-bold uppercase tracking-[0.12em] text-muted">{{ label() }}</p>
         <span class="grid size-9 shrink-0 place-items-center rounded-xl" [class]="iconClass()">
           <app-icon [name]="icon()" [size]="17" />
         </span>

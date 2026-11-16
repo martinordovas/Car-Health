@@ -1,26 +1,30 @@
 @if (!store.selected()) {
-  <app-page-header eyebrow="Prevención" title="Mantenimiento" subtitle="El plan de cuidados de tu coche, siempre a mano." />
+  <app-page-header
+    [eyebrow]="'maintenance.eyebrow' | t"
+    [title]="'maintenance.title' | t"
+    [subtitle]="'maintenance.subtitle' | t"
+  />
   <div class="card">
     <app-empty-state
-      title="Añade tu coche para crear su plan"
-      description="Generaremos un plan preventivo con aceite, filtros, frenos, ITV y todo lo importante."
+      [title]="'maintenance.noCarTitle' | t"
+      [description]="'maintenance.noCarDescription' | t"
     >
       <a routerLink="/app/garage" class="btn btn-primary">
         <app-icon name="plus" [size]="16" />
-        Añadir coche
+        {{ 'maintenance.addCar' | t }}
       </a>
     </app-empty-state>
   </div>
 } @else {
   <div class="page-enter">
     <app-page-header
-      eyebrow="Prevención"
-      title="Mantenimiento"
-      [subtitle]="'El plan de ' + (store.selected()?.name ?? 'tu coche') + ' y todo lo que ya has hecho.'"
+      [eyebrow]="'maintenance.eyebrow' | t"
+      [title]="'maintenance.title' | t"
+      [subtitle]="'maintenance.subtitleWithVehicle' | t: { vehicle: vehicleName() }"
     >
       <a routerLink="/app/services/new" class="btn btn-primary">
         <app-icon name="plus" [size]="17" />
-        Nuevo mantenimiento
+        {{ 'maintenance.newMaintenance' | t }}
       </a>
     </app-page-header>
 
@@ -35,14 +39,16 @@
       </div>
     } @else if (error() && rules().length === 0) {
       <div class="card mx-auto max-w-lg p-8 text-center">
-        <span class="mx-auto grid size-14 place-items-center rounded-2xl bg-warning-soft text-warning">
+        <span
+          class="mx-auto grid size-14 place-items-center rounded-2xl bg-warning-soft text-warning"
+        >
           <app-icon name="cloud-off" [size]="26" />
         </span>
-        <h2 class="mt-5 text-lg font-bold">No hay mantenimiento disponible offline</h2>
+        <h2 class="mt-5 text-lg font-bold">{{ 'maintenance.offlineErrorTitle' | t }}</h2>
         <p class="mt-2 text-sm text-muted">{{ error() }}</p>
         <button class="btn btn-primary mt-5" type="button" (click)="retry()">
           <app-icon name="refresh" [size]="17" />
-          Reintentar
+          {{ 'common.retry' | t }}
         </button>
       </div>
     } @else {
@@ -50,40 +56,60 @@
         <div class="card-flat p-4">
           <div class="flex items-center gap-2 text-muted">
             <app-icon name="shield" [size]="14" />
-            <p class="text-[10px] font-bold uppercase tracking-[0.1em]">Próximo</p>
+            <p class="text-[10px] font-bold uppercase tracking-[0.1em]">
+              {{ 'maintenance.next' | t }}
+            </p>
           </div>
-          <p class="mt-2 truncate text-sm font-bold">{{ nextRule()?.name ?? 'Plan al día' }}</p>
+          <p class="mt-2 truncate text-sm font-bold">
+            {{ nextRule() ? ruleName(nextRule()!.name) : ('maintenance.planUpToDate' | t) }}
+          </p>
           <p class="mt-1 text-[11px] text-muted">
             @if (nextRule()) {
               {{ statusLabel(nextRule()!.status) }}
             } @else {
-              Sin vencimientos
+              {{ 'maintenance.noDue' | t }}
             }
           </p>
         </div>
         <div class="card-flat p-4">
           <div class="flex items-center gap-2 text-muted">
             <app-icon name="alert-triangle" [size]="14" />
-            <p class="text-[10px] font-bold uppercase tracking-[0.1em]">Atención</p>
+            <p class="text-[10px] font-bold uppercase tracking-[0.1em]">
+              {{ 'maintenance.attention' | t }}
+            </p>
           </div>
           <p class="metric-value mt-2 text-xl">{{ overdueCount() + soonCount() }}</p>
-          <p class="mt-1 text-[11px] text-muted">{{ overdueCount() }} vencidos · {{ soonCount() }} próximos</p>
+          <p class="mt-1 text-[11px] text-muted">
+            {{ 'maintenance.overdueCount' | t: { count: overdueCount() } }} ·
+            {{ 'maintenance.upcomingCount' | t: { count: soonCount() } }}
+          </p>
         </div>
         <div class="card-flat p-4">
           <div class="flex items-center gap-2 text-muted">
             <app-icon name="euro" [size]="14" />
-            <p class="text-[10px] font-bold uppercase tracking-[0.1em]">Invertido</p>
+            <p class="text-[10px] font-bold uppercase tracking-[0.1em]">
+              {{ 'maintenance.invested' | t }}
+            </p>
           </div>
           <p class="metric-value mt-2 text-xl">{{ money(totalSpent()) }}</p>
-          <p class="mt-1 text-[11px] text-muted">{{ displayRecords().length }} intervenciones</p>
+          <p class="mt-1 text-[11px] text-muted">
+            {{
+              (displayRecords().length === 1
+                ? 'maintenance.interventions.one'
+                : 'maintenance.interventions.other'
+              ) | t: { count: displayRecords().length }
+            }}
+          </p>
         </div>
         <div class="card-flat p-4">
           <div class="flex items-center gap-2 text-muted">
             <app-icon name="gauge" [size]="14" />
-            <p class="text-[10px] font-bold uppercase tracking-[0.1em]">Kilómetros</p>
+            <p class="text-[10px] font-bold uppercase tracking-[0.1em]">
+              {{ 'maintenance.kilometers' | t }}
+            </p>
           </div>
           <p class="metric-value mt-2 text-xl">{{ km(store.selected()?.currentOdometer) }}</p>
-          <p class="mt-1 text-[11px] text-muted">Odómetro actual</p>
+          <p class="mt-1 text-[11px] text-muted">{{ 'maintenance.currentOdometer' | t }}</p>
         </div>
       </div>
 
@@ -91,22 +117,32 @@
         <button
           type="button"
           class="flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition"
-          [class]="tab() === 'plan' ? 'bg-ink text-canvas shadow-sm dark:bg-accent dark:text-accent-ink' : 'text-muted hover:text-ink'"
+          [class]="
+            tab() === 'plan'
+              ? 'bg-ink text-canvas shadow-sm dark:bg-accent dark:text-accent-ink'
+              : 'text-muted hover:text-ink'
+          "
           (click)="tab.set('plan')"
         >
           <app-icon name="shield" [size]="15" />
-          Plan preventivo
+          {{ 'maintenance.planTab' | t }}
         </button>
         <button
           type="button"
           class="flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition"
-          [class]="tab() === 'history' ? 'bg-ink text-canvas shadow-sm dark:bg-accent dark:text-accent-ink' : 'text-muted hover:text-ink'"
+          [class]="
+            tab() === 'history'
+              ? 'bg-ink text-canvas shadow-sm dark:bg-accent dark:text-accent-ink'
+              : 'text-muted hover:text-ink'
+          "
           (click)="tab.set('history')"
         >
           <app-icon name="file-text" [size]="15" />
-          Historial
+          {{ 'maintenance.historyTab' | t }}
           @if (displayRecords().length > 0) {
-            <span class="rounded-full bg-surface-strong px-1.5 py-0.5 text-[9px] text-muted">{{ displayRecords().length }}</span>
+            <span class="rounded-full bg-surface-strong px-1.5 py-0.5 text-[9px] text-muted">{{
+              displayRecords().length
+            }}</span>
           }
         </button>
       </div>
@@ -114,16 +150,28 @@
       @if (tab() === 'plan') {
         @if (rules().length === 0) {
           <div class="card">
-            <app-empty-state title="Todavía no hay plan preventivo" description="Crea reglas de mantenimiento para controlar cuándo toca cada cosa.">
-              <a routerLink="/app/services/new" class="btn btn-primary">Registrar mantenimiento</a>
+            <app-empty-state
+              [title]="'maintenance.emptyPlanTitle' | t"
+              [description]="'maintenance.emptyPlanDescription' | t"
+            >
+              <a routerLink="/app/services/new" class="btn btn-primary">{{
+                'maintenance.registerMaintenance' | t
+              }}</a>
             </app-empty-state>
           </div>
         } @else {
           @if (overdueCount() > 0) {
-            <div class="mb-4 flex items-start gap-3 rounded-2xl border border-danger/20 bg-danger-soft px-4 py-3 text-danger">
+            <div
+              class="mb-4 flex items-start gap-3 rounded-2xl border border-danger/20 bg-danger-soft px-4 py-3 text-danger"
+            >
               <app-icon name="alert-triangle" [size]="18" class="mt-0.5 shrink-0" />
               <p class="text-xs font-semibold leading-relaxed">
-                Tienes {{ overdueCount() }} mantenimiento{{ overdueCount() === 1 ? '' : 's' }} vencido{{ overdueCount() === 1 ? '' : 's' }}. Mejor no darle más vueltas.
+                {{
+                  (overdueCount() === 1
+                    ? 'maintenance.overdueBanner.one'
+                    : 'maintenance.overdueBanner.other'
+                  ) | t: { count: overdueCount() }
+                }}
               </p>
             </div>
           }
@@ -133,47 +181,77 @@
                 <div class="flex items-start gap-3">
                   <span
                     class="grid size-10 shrink-0 place-items-center rounded-xl"
-                    [class]="rule.category === 'LEGAL' ? 'bg-warning-soft text-warning' : 'bg-brand-soft text-brand dark:text-accent'"
+                    [class]="
+                      rule.category === 'LEGAL'
+                        ? 'bg-warning-soft text-warning'
+                        : 'bg-brand-soft text-brand dark:text-accent'
+                    "
                   >
-                    <app-icon [name]="rule.category === 'LEGAL' ? 'file-text' : 'shield'" [size]="18" />
+                    <app-icon
+                      [name]="rule.category === 'LEGAL' ? 'file-text' : 'shield'"
+                      [size]="18"
+                    />
                   </span>
                   <div class="min-w-0 flex-1">
                     <div class="flex items-start justify-between gap-2">
-                      <h2 class="text-sm font-bold leading-snug">{{ rule.name }}</h2>
-                      <span class="chip shrink-0" [class]="statusTone(rule.status)">{{ statusLabel(rule.status) }}</span>
+                      <h2 class="text-sm font-bold leading-snug">{{ ruleName(rule.name) }}</h2>
+                      <span class="chip shrink-0" [class]="statusTone(rule.status)">{{
+                        statusLabel(rule.status)
+                      }}</span>
                     </div>
                     <p class="mt-1 text-[11px] text-muted">
                       @if (rule.intervalKm) {
-                        Cada {{ km(rule.intervalKm) }}
+                        {{ 'maintenance.everyKm' | t: { km: km(rule.intervalKm) } }}
                       }
                       @if (rule.intervalKm && rule.intervalMonths) {
                         <span> · </span>
                       }
                       @if (rule.intervalMonths) {
-                        Cada {{ rule.intervalMonths }} meses
+                        {{
+                          (rule.intervalMonths === 1
+                            ? 'maintenance.everyMonths.one'
+                            : 'maintenance.everyMonths.other'
+                          ) | t: { count: rule.intervalMonths }
+                        }}
                       }
                       @if (!rule.intervalKm && !rule.intervalMonths) {
-                        Sin intervalo definido
+                        {{ 'maintenance.noInterval' | t }}
                       }
                     </p>
                   </div>
                 </div>
 
                 <div class="mt-5">
-                  <div class="flex items-center justify-between text-[10px] font-semibold text-faint">
-                    <span>{{ rule.lastServiceDate ? 'Último: ' + dateMedium(rule.lastServiceDate) : 'Desde el inicio' }}</span>
+                  <div
+                    class="flex items-center justify-between text-[10px] font-semibold text-faint"
+                  >
+                    <span>{{
+                      rule.lastServiceDate
+                        ? ('maintenance.last' | t: { date: dateMedium(rule.lastServiceDate) })
+                        : ('maintenance.fromStart' | t)
+                    }}</span>
                     @if (rule.nextServiceDate) {
-                      <span>Vence {{ dateMedium(rule.nextServiceDate) }}</span>
+                      <span>{{
+                        'maintenance.due' | t: { date: dateMedium(rule.nextServiceDate) }
+                      }}</span>
                     }
                   </div>
                   <div class="mt-2 h-2 overflow-hidden rounded-full bg-surface-strong">
                     <div
                       class="h-full rounded-full transition-all duration-500"
-                      [class]="rule.status === 'OVERDUE' ? 'bg-danger' : rule.status === 'DUE_SOON' ? 'bg-warning' : 'bg-success'"
+                      [class]="
+                        rule.status === 'OVERDUE'
+                          ? 'bg-danger'
+                          : rule.status === 'DUE_SOON'
+                            ? 'bg-warning'
+                            : 'bg-success'
+                      "
                       [style.width.%]="progress(rule)"
                     ></div>
                   </div>
-                  <div class="mt-2 flex items-center justify-between text-[11px] font-medium text-muted">
+                  <div
+                    class="mt-2 flex items-center justify-between text-[11px] font-medium text-muted"
+                  >
                     <span>{{ remainingKm(rule.remainingKm) }}</span>
                     <span>{{ remainingDays(rule.remainingDays) }}</span>
                   </div>
@@ -181,14 +259,18 @@
 
                 <div class="mt-4 flex items-center justify-between border-t border-line pt-4">
                   <span class="text-[10px] font-medium text-faint">
-                    {{ rule.lastServiceTitle ? 'Última: ' + rule.lastServiceTitle : 'Sin registro previo' }}
+                    {{
+                      rule.lastServiceTitle
+                        ? ('maintenance.lastService' | t: { title: rule.lastServiceTitle })
+                        : ('maintenance.noPrevious' | t)
+                    }}
                   </span>
                   <a
                     routerLink="/app/services/new"
                     [queryParams]="{ ruleId: rule.id, title: rule.name }"
                     class="btn btn-ghost btn-sm -me-2 text-brand dark:text-accent"
                   >
-                    Registrar
+                    {{ 'maintenance.register' | t }}
                     <app-icon name="arrow-right" [size]="14" />
                   </a>
                 </div>
@@ -200,12 +282,12 @@
         @if (displayRecords().length === 0) {
           <div class="card">
             <app-empty-state
-              title="Aún no hay intervenciones"
-              description="Registra el primer mantenimiento para empezar tu libro de vida del coche."
+              [title]="'maintenance.emptyHistoryTitle' | t"
+              [description]="'maintenance.emptyHistoryDescription' | t"
             >
               <a routerLink="/app/services/new" class="btn btn-primary">
                 <app-icon name="wrench" [size]="17" />
-                Registrar mantenimiento
+                {{ 'maintenance.registerMaintenance' | t }}
               </a>
             </app-empty-state>
           </div>
@@ -218,10 +300,22 @@
                 [class.ring-line]="isExpanded(record.id)"
                 [class.opacity-80]="record.pending"
               >
-                <button type="button" class="flex w-full items-center gap-3 p-4 text-left sm:gap-4 sm:p-5" (click)="toggleRecord(record.id)">
+                <button
+                  type="button"
+                  class="flex w-full items-center gap-3 p-4 text-left sm:gap-4 sm:p-5"
+                  (click)="toggleRecord(record.id)"
+                >
                   <span
                     class="grid size-10 shrink-0 place-items-center rounded-xl sm:size-11"
-                    [class]="record.category === 'CORRECTIVE' ? 'bg-danger-soft text-danger' : record.category === 'LEGAL' ? 'bg-warning-soft text-warning' : record.category === 'MODIFICATION' ? 'bg-info-soft text-info' : 'bg-brand-soft text-brand dark:text-accent'"
+                    [class]="
+                      record.category === 'CORRECTIVE'
+                        ? 'bg-danger-soft text-danger'
+                        : record.category === 'LEGAL'
+                          ? 'bg-warning-soft text-warning'
+                          : record.category === 'MODIFICATION'
+                            ? 'bg-info-soft text-info'
+                            : 'bg-brand-soft text-brand dark:text-accent'
+                    "
                   >
                     <app-icon [name]="recordIcon(record)" [size]="18" />
                   </span>
@@ -230,19 +324,27 @@
                     <div class="flex flex-wrap items-center gap-1.5">
                       <p class="truncate text-sm font-bold">{{ record.title }}</p>
                       @if (record.pending) {
-                        <span class="chip chip-warning">Pendiente</span>
+                        <span class="chip chip-warning">{{ 'common.pending' | t }}</span>
                       }
                     </div>
                     <p class="mt-1 truncate text-[11px] text-muted">
-                      {{ dateMedium(record.date) }} · {{ km(record.odometer) }} · {{ performedByLabel[record.performedBy] }}
+                      {{ dateMedium(record.date) }} · {{ km(record.odometer) }} ·
+                      {{ performedByLabel(record.performedBy) }}
                     </p>
                     <div class="mt-1.5 flex flex-wrap gap-1.5">
-                      <span class="chip" [class]="categoryTone(record.category)">{{ categoryLabel(record.category) }}</span>
+                      <span class="chip" [class]="categoryTone(record.category)">{{
+                        categoryLabel(record.category)
+                      }}</span>
                       @if (record.ruleName) {
-                        <span class="chip chip-neutral">{{ record.ruleName }}</span>
+                        <span class="chip chip-neutral">{{ ruleName(record.ruleName) }}</span>
                       }
                       @if (partsCount(record) > 0) {
-                        <span class="chip chip-neutral">{{ partsCount(record) }} recambio{{ partsCount(record) === 1 ? '' : 's' }}</span>
+                        <span class="chip chip-neutral">{{
+                          (partsCount(record) === 1
+                            ? 'maintenance.partsCount.one'
+                            : 'maintenance.partsCount.other'
+                          ) | t: { count: partsCount(record) }
+                        }}</span>
                       }
                     </div>
                   </div>
@@ -262,31 +364,46 @@
                   <div class="border-t border-line bg-surface-soft/60 px-4 py-4 sm:px-5">
                     <div class="grid gap-3 text-xs sm:grid-cols-3">
                       <div>
-                        <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">Mano de obra</p>
+                        <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">
+                          {{ 'maintenance.labor' | t }}
+                        </p>
                         <p class="mt-1 font-semibold">{{ money(record.laborCost) }}</p>
                       </div>
                       <div>
-                        <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">Recambios</p>
+                        <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">
+                          {{ 'maintenance.parts' | t }}
+                        </p>
                         <p class="mt-1 font-semibold">{{ money(record.partsCost) }}</p>
                       </div>
                       <div>
-                        <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">Realizado en</p>
-                        <p class="mt-1 font-semibold">{{ performedByLabel[record.performedBy] }}</p>
+                        <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">
+                          {{ 'maintenance.performedAt' | t }}
+                        </p>
+                        <p class="mt-1 font-semibold">{{ performedByLabel(record.performedBy) }}</p>
                       </div>
                     </div>
 
                     @if (record.parts.length > 0) {
                       <div class="mt-4 overflow-hidden rounded-xl border border-line bg-surface">
                         @for (part of record.parts; track $index; let last = $last) {
-                          <div class="flex items-center gap-3 px-3 py-2.5 text-xs" [class.border-b]="!last" [class.border-line]="!last">
+                          <div
+                            class="flex items-center gap-3 px-3 py-2.5 text-xs"
+                            [class.border-b]="!last"
+                            [class.border-line]="!last"
+                          >
                             <span class="min-w-0 flex-1">
                               <span class="block truncate font-semibold">{{ part.partName }}</span>
                               <span class="block text-[10px] text-faint">
-                                {{ part.brand || 'Sin marca' }}{{ part.oemReference ? ' · ' + part.oemReference : '' }}
+                                {{ part.brand || ('maintenance.noBrand' | t)
+                                }}{{ part.oemReference ? ' · ' + part.oemReference : '' }}
                               </span>
                             </span>
-                            <span class="shrink-0 text-[11px] text-muted">×{{ decimal(part.quantity, 2) }}</span>
-                            <span class="w-16 shrink-0 text-right font-semibold">{{ money(part.lineTotal ?? part.quantity * part.unitPrice) }}</span>
+                            <span class="shrink-0 text-[11px] text-muted"
+                              >×{{ decimal(part.quantity, 2) }}</span
+                            >
+                            <span class="w-16 shrink-0 text-right font-semibold">{{
+                              money(part.lineTotal ?? part.quantity * part.unitPrice)
+                            }}</span>
                           </div>
                         }
                       </div>
@@ -294,15 +411,19 @@
 
                     @if (record.notes) {
                       <div class="mt-4 rounded-xl border border-line bg-surface p-3">
-                        <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">Notas</p>
+                        <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">
+                          {{ 'maintenance.notes' | t }}
+                        </p>
                         <p class="mt-1 text-xs leading-relaxed text-muted">{{ record.notes }}</p>
                       </div>
                     }
 
                     @if (record.invoiceFilePath) {
-                      <p class="mt-3 inline-flex items-center gap-1.5 text-[10px] font-medium text-faint">
+                      <p
+                        class="mt-3 inline-flex items-center gap-1.5 text-[10px] font-medium text-faint"
+                      >
                         <app-icon name="file-text" [size]="12" />
-                        Factura: {{ record.invoiceFilePath }}
+                        {{ 'maintenance.invoice' | t: { value: record.invoiceFilePath } }}
                       </p>
                     }
                   </div>
@@ -314,7 +435,7 @@
           <div class="mt-5 flex justify-center">
             <a routerLink="/app/services/new" class="btn btn-surface">
               <app-icon name="plus" [size]="16" />
-              Registrar otra intervención
+              {{ 'maintenance.registerAnother' | t }}
             </a>
           </div>
         }

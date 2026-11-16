@@ -12,12 +12,15 @@ import {
   price,
 } from '../../core/format';
 import { FuelService } from '../../core/fuel.service';
+import { localeTag } from '../../core/i18n';
+import { I18nService } from '../../core/i18n.service';
 import type { FuelLog } from '../../core/models';
 import { OfflineQueueService } from '../../core/offline-queue.service';
 import { ToastService } from '../../core/toast.service';
 import { VehicleStore } from '../../core/vehicle-store.service';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
 import { IconComponent } from '../../shared/icon/icon';
+import { TranslatePipe } from '../../shared/i18n/translate.pipe';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 
 interface MonthGroup {
@@ -29,15 +32,19 @@ interface MonthGroup {
 
 @Component({
   selector: 'app-fuel-list-page',
-  imports: [RouterLink, IconComponent, PageHeaderComponent, EmptyStateComponent],
+  imports: [RouterLink, IconComponent, PageHeaderComponent, EmptyStateComponent, TranslatePipe],
   templateUrl: './fuel-list-page.html',
 })
 export class FuelListPageComponent {
   private readonly fuelService = inject(FuelService);
   readonly store = inject(VehicleStore);
+  private readonly i18n = inject(I18nService);
   private readonly queue = inject(OfflineQueueService);
   private readonly toast = inject(ToastService);
 
+  readonly vehicleName = computed(
+    () => this.store.selected()?.name ?? this.i18n.t('common.yourCar'),
+  );
   readonly logs = signal<FuelLog[]>([]);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
@@ -62,8 +69,12 @@ export class FuelListPageComponent {
   });
 
   readonly groups = computed<MonthGroup[]>(() => {
+    this.i18n.locale();
     const groups = new Map<string, MonthGroup>();
-    const formatter = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' });
+    const formatter = new Intl.DateTimeFormat(localeTag(this.i18n.locale()), {
+      month: 'long',
+      year: 'numeric',
+    });
     for (const log of this.displayLogs()) {
       const date = new Date(log.date);
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -134,6 +145,6 @@ export class FuelListPageComponent {
 
   savingsLabel(log: FuelLog): string | null {
     if (!log.savings || log.savings.savingsAmount <= 0) return null;
-    return `Ahorro ${money(log.savings.savingsAmount)}`;
+    return this.i18n.t('fuel.list.savings', { amount: money(log.savings.savingsAmount) });
   }
 }

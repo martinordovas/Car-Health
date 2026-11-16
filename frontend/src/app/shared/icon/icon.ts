@@ -51,6 +51,7 @@ export type IconName =
   | 'search'
   | 'crosshair'
   | 'camera'
+  | 'languages'
   | 'more';
 
 @Component({
@@ -283,6 +284,11 @@ export type IconName =
         @case ('camera') {
           <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z" />
           <circle cx="12" cy="13" r="3" />
+        }
+        @case ('languages') {
+          <circle cx="12" cy="12" r="9" />
+          <path d="M3 12h18" />
+          <path d="M12 3a14.5 14.5 0 0 1 0 18 14.5 14.5 0 0 1 0-18Z" />
         }
         @case ('more') {
           <circle cx="12" cy="12" r="1" />

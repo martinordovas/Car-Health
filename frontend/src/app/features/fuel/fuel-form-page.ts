@@ -2,42 +2,45 @@ import { Component, computed, effect, inject, signal, untracked } from '@angular
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { catchError, debounceTime, distinctUntilChanged, finalize, of, switchMap } from 'rxjs';
 import {
-  catchError,
-  debounceTime,
-  distinctUntilChanged,
-  finalize,
-  of,
-  switchMap,
-} from 'rxjs';
-import {
-  dateMedium,
   decimal,
   errorMessage,
   km,
+  liters as formatLiters,
   money,
   nowInputDateTime,
   price,
 } from '../../core/format';
 import { ConnectivityService } from '../../core/connectivity.service';
 import { FuelService } from '../../core/fuel.service';
+import { I18nService } from '../../core/i18n.service';
 import type { FuelLog } from '../../core/models';
 import { PlaceSearchService, type PlaceSuggestion } from '../../core/place-search.service';
 import { VehicleStore } from '../../core/vehicle-store.service';
 import { DateTimePickerComponent } from '../../shared/datetime-picker/datetime-picker';
 import { IconComponent } from '../../shared/icon/icon';
+import { TranslatePipe } from '../../shared/i18n/translate.pipe';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { ToastService } from '../../core/toast.service';
 
 @Component({
   selector: 'app-fuel-form-page',
-  imports: [ReactiveFormsModule, RouterLink, DateTimePickerComponent, IconComponent, PageHeaderComponent],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    DateTimePickerComponent,
+    IconComponent,
+    PageHeaderComponent,
+    TranslatePipe,
+  ],
   templateUrl: './fuel-form-page.html',
 })
 export class FuelFormPageComponent {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly fuelService = inject(FuelService);
+  private readonly i18n = inject(I18nService);
   private readonly toast = inject(ToastService);
   private readonly places = inject(PlaceSearchService);
   readonly store = inject(VehicleStore);
@@ -46,6 +49,9 @@ export class FuelFormPageComponent {
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
   readonly logs = signal<FuelLog[]>([]);
+  readonly vehicleName = computed(
+    () => this.store.selected()?.name ?? this.i18n.t('common.yourCar'),
+  );
   readonly suggestions = signal<PlaceSuggestion[]>([]);
   readonly searchingLocation = signal(false);
   readonly locating = signal(false);
@@ -65,14 +71,16 @@ export class FuelFormPageComponent {
     boardComputerAvg: [null as number | null],
   });
 
-  private readonly formValues = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
+  private readonly formValues = toSignal(this.form.valueChanges, {
+    initialValue: this.form.getRawValue(),
+  });
   private currentVehicleId: number | null = null;
 
   protected readonly money = money;
   protected readonly price = price;
   protected readonly km = km;
   protected readonly decimal = decimal;
-  protected readonly dateMedium = dateMedium;
+  protected readonly liters = formatLiters;
 
   readonly formLiters = computed(() => {
     this.formValues();
@@ -91,6 +99,7 @@ export class FuelFormPageComponent {
   });
 
   readonly reference = computed(() => {
+    this.i18n.locale();
     this.formValues();
     const vehicle = this.store.selected();
     const logs = this.logs();
@@ -111,13 +120,20 @@ export class FuelFormPageComponent {
         return {
           value: weighted / litersSum,
           type: 'STATION_AVERAGE' as const,
-          label: this.form.controls.stationName.value || this.form.controls.stationLocation.value || 'esta gasolinera',
+          label:
+            this.form.controls.stationName.value ||
+            this.form.controls.stationLocation.value ||
+            this.i18n.t('fuel.form.referenceThisStation'),
         };
       }
     }
     if (logs.length > 0) {
       const latest = [...logs].sort((a, b) => b.date.localeCompare(a.date))[0];
-      return { value: latest.pricePerLiter, type: 'PREVIOUS_FILL' as const, label: 'tu último repostaje' };
+      return {
+        value: latest.pricePerLiter,
+        type: 'PREVIOUS_FILL' as const,
+        label: this.i18n.t('fuel.form.referenceLastFill'),
+      };
     }
     return null;
   });
@@ -135,7 +151,10 @@ export class FuelFormPageComponent {
       amount,
       percent,
       cheaper: difference > 0,
-      label: reference.type === 'STATION_AVERAGE' ? `tu media en ${reference.label}` : reference.label,
+      label:
+        reference.type === 'STATION_AVERAGE'
+          ? this.i18n.t('fuel.form.referenceStationAverage', { station: reference.label })
+          : reference.label,
     };
   });
 
@@ -155,9 +174,7 @@ export class FuelFormPageComponent {
           this.locationError.set(null);
           return this.places.search(query, this.locationCoords()).pipe(
             catchError(() => {
-              this.locationError.set(
-                'No hemos podido buscar lugares. Comprueba la conexión o escribe la ubicación a mano.',
-              );
+              this.locationError.set(this.i18n.t('fuel.form.locationErrorSearch'));
               return of<PlaceSuggestion[]>([]);
             }),
             finalize(() => this.searchingLocation.set(false)),
@@ -188,11 +205,11 @@ export class FuelFormPageComponent {
     this.locationError.set(null);
 
     if (!this.connectivity.online()) {
-      this.locationError.set('Sin conexión. Puedes escribir la ubicación a mano.');
+      this.locationError.set(this.i18n.t('fuel.form.locationErrorOffline'));
       return;
     }
     if (!('geolocation' in navigator)) {
-      this.locationError.set('Tu navegador no permite obtener la ubicación.');
+      this.locationError.set(this.i18n.t('fuel.form.locationErrorNoGeo'));
       return;
     }
 
@@ -212,15 +229,11 @@ export class FuelFormPageComponent {
               if (place) {
                 this.selectLocation(place);
               } else {
-                this.locationError.set(
-                  'Te hemos localizado, pero no hemos encontrado una dirección. Puedes buscarla a mano.',
-                );
+                this.locationError.set(this.i18n.t('fuel.form.locationErrorGeocode'));
               }
             },
             error: () => {
-              this.locationError.set(
-                'Te hemos localizado, pero no hemos podido obtener la dirección. Puedes buscarla a mano.',
-              );
+              this.locationError.set(this.i18n.t('fuel.form.locationErrorAddress'));
             },
           });
       },
@@ -228,8 +241,8 @@ export class FuelFormPageComponent {
         this.locating.set(false);
         this.locationError.set(
           geoError.code === geoError.PERMISSION_DENIED
-            ? 'No has dado permiso de ubicación. Puedes buscar escribiendo la dirección.'
-            : 'No hemos podido obtener tu ubicación. Puedes buscar escribiendo la dirección.',
+            ? this.i18n.t('fuel.form.locationErrorPermission')
+            : this.i18n.t('fuel.form.locationErrorGeneric'),
         );
       },
       { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 },
@@ -266,7 +279,7 @@ export class FuelFormPageComponent {
     this.error.set(null);
     const vehicle = this.store.selected();
     if (!vehicle) {
-      this.error.set('Añade un coche antes de registrar un repostaje.');
+      this.error.set(this.i18n.t('fuel.form.noCarError'));
       return;
     }
     if (this.form.invalid) {
@@ -276,7 +289,9 @@ export class FuelFormPageComponent {
     const value = this.form.getRawValue();
     const odometer = Number(value.odometer);
     if (odometer < vehicle.currentOdometer) {
-      this.error.set(`El odómetro no puede ser inferior al actual: ${km(vehicle.currentOdometer)}.`);
+      this.error.set(
+        this.i18n.t('fuel.form.validationBelowCurrent', { km: km(vehicle.currentOdometer) }),
+      );
       this.form.controls.odometer.setErrors({ belowCurrent: true });
       return;
     }
@@ -298,11 +313,16 @@ export class FuelFormPageComponent {
       .subscribe({
         next: (log) => {
           if (log.pending) {
-            this.toast.info('Repostaje guardado en el dispositivo. Se sincronizará al volver online.');
+            this.toast.info(this.i18n.t('fuel.form.toastSavedOffline'));
           } else if (log.savings?.savingsAmount && log.savings.savingsAmount > 0) {
-            this.toast.success(log.savings.message);
+            this.toast.success(
+              this.i18n.t('fuel.form.toastSavings', {
+                percent: decimal(Math.abs(log.savings.percentCheaper)),
+                amount: money(log.savings.savingsAmount),
+              }),
+            );
           } else {
-            this.toast.success('Repostaje registrado. Ya estamos calculando consumo y ahorro.');
+            this.toast.success(this.i18n.t('fuel.form.toastRegistered'));
           }
           void this.router.navigate(['/app/fuel']);
         },
@@ -320,11 +340,11 @@ export class FuelFormPageComponent {
   fieldError(name: string): string | null {
     const control = this.form.get(name);
     if (!control || !(control.touched || control.dirty) || !control.invalid) return null;
-    if (control.errors?.['required']) return 'Este campo es obligatorio.';
-    if (control.errors?.['min']) return 'Introduce un valor válido.';
-    if (control.errors?.['maxlength']) return 'El texto es demasiado largo.';
-    if (control.errors?.['belowCurrent']) return 'El odómetro no puede bajar del actual.';
-    return 'Revisa este campo.';
+    if (control.errors?.['required']) return this.i18n.t('fuel.form.validationRequired');
+    if (control.errors?.['min']) return this.i18n.t('fuel.form.validationValue');
+    if (control.errors?.['maxlength']) return this.i18n.t('fuel.form.validationTooLong');
+    if (control.errors?.['belowCurrent']) return this.i18n.t('fuel.form.validationBelow');
+    return this.i18n.t('fuel.form.validationReview');
   }
 
   private loadLogs(vehicleId: number): void {

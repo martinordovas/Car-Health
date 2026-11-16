@@ -5,6 +5,7 @@ import { environment } from '../../environments/environment';
 import { dateShort, generateId, isNetworkError } from './format';
 import type { FuelLog, FuelLogInput } from './models';
 import { ConnectivityService } from './connectivity.service';
+import { I18nService } from './i18n.service';
 import { OfflineQueueService } from './offline-queue.service';
 import { VehicleStore } from './vehicle-store.service';
 
@@ -12,6 +13,7 @@ import { VehicleStore } from './vehicle-store.service';
 export class FuelService {
   private readonly http = inject(HttpClient);
   private readonly connectivity = inject(ConnectivityService);
+  private readonly i18n = inject(I18nService);
   private readonly queue = inject(OfflineQueueService);
   private readonly store = inject(VehicleStore);
   private readonly base = `${environment.apiUrl}/vehicles`;
@@ -36,7 +38,7 @@ export class FuelService {
             url,
             body,
             preview,
-            label: `Repostaje · ${dateShort(input.date)}`,
+            label: `${this.i18n.t('queue.fuelLabel')} · ${dateShort(input.date)}`,
           }),
         ).pipe(
           map(() => {

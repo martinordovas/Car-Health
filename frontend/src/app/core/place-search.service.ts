@@ -2,6 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { hasTranslation, type TranslationKey } from './i18n';
+import { I18nService } from './i18n.service';
 
 export interface PlaceSuggestion {
   id: string;
@@ -40,188 +42,29 @@ interface PhotonResponse {
   features: PhotonFeature[];
 }
 
-const KIND_LABELS: Record<string, string> = {
-  // Lugares y divisiones administrativas
-  house: 'Dirección',
-  street: 'Calle',
-  locality: 'Localidad',
-  city: 'Ciudad',
-  town: 'Villa',
-  village: 'Pueblo',
-  hamlet: 'Aldea',
-  suburb: 'Barrio',
-  neighbourhood: 'Barrio',
-  quarter: 'Barrio',
-  district: 'Distrito',
-  county: 'Comarca',
-  municipality: 'Municipio',
-  state: 'Provincia',
-  region: 'Región',
-  country: 'País',
-  island: 'Isla',
-  // Naturaleza
-  peak: 'Pico',
-  mountain: 'Montaña',
-  hill: 'Colina',
-  volcano: 'Volcán',
-  water: 'Agua',
-  river: 'Río',
-  lake: 'Lago',
-  bay: 'Bahía',
-  beach: 'Playa',
-  forest: 'Bosque',
-  wood: 'Bosque',
-  park: 'Parque',
-  garden: 'Jardín',
-  // Comercio y restauración
-  fuel: 'Gasolinera',
-  car: 'Concesionario',
-  car_repair: 'Taller',
-  car_parts: 'Recambios',
-  tyres: 'Neumáticos',
-  motorcycle: 'Motos',
-  bicycle: 'Bicicletas',
-  charging_station: 'Punto de carga',
-  parking: 'Parking',
-  car_wash: 'Lavadero',
-  car_rental: 'Alquiler de coches',
-  convenience: 'Tienda',
-  supermarket: 'Supermercado',
-  mall: 'Centro comercial',
-  department_store: 'Grandes almacenes',
-  hardware: 'Ferretería',
-  doityourself: 'Bricolaje',
-  furniture: 'Muebles',
-  electronics: 'Electrónica',
-  clothes: 'Ropa',
-  shoes: 'Calzado',
-  bakery: 'Panadería',
-  butcher: 'Carnicería',
-  greengrocer: 'Frutería',
-  florist: 'Floristería',
-  books: 'Librería',
-  stationery: 'Papelería',
-  sports: 'Deportes',
-  pet: 'Mascotas',
-  garden_centre: 'Centro de jardinería',
-  marketplace: 'Mercado',
-  restaurant: 'Restaurante',
-  cafe: 'Cafetería',
-  bar: 'Bar',
-  pub: 'Pub',
-  fast_food: 'Comida rápida',
-  // Servicios y equipamientos
-  pharmacy: 'Farmacia',
-  hospital: 'Hospital',
-  clinic: 'Clínica',
-  doctors: 'Centro médico',
-  dentist: 'Dentista',
-  veterinary: 'Veterinario',
-  school: 'Colegio',
-  university: 'Universidad',
-  college: 'Instituto',
-  kindergarten: 'Guardería',
-  library: 'Biblioteca',
-  museum: 'Museo',
-  theatre: 'Teatro',
-  cinema: 'Cine',
-  bank: 'Banco',
-  atm: 'Cajero',
-  post_office: 'Oficina de correos',
-  police: 'Policía',
-  fire_station: 'Parque de bomberos',
-  townhall: 'Ayuntamiento',
-  place_of_worship: 'Lugar de culto',
-  bus_station: 'Estación de autobuses',
-  // Turismo y ocio
-  hotel: 'Hotel',
-  motel: 'Motel',
-  guest_house: 'Casa de huéspedes',
-  hostel: 'Albergue',
-  apartment: 'Apartamento',
-  camp_site: 'Camping',
-  caravan_site: 'Zona de caravanas',
-  attraction: 'Atracción',
-  viewpoint: 'Mirador',
-  zoo: 'Zoológico',
-  theme_park: 'Parque temático',
-  sports_centre: 'Centro deportivo',
-  fitness_centre: 'Gimnasio',
-  stadium: 'Estadio',
-  pitch: 'Campo deportivo',
-  playground: 'Parque infantil',
-  golf_course: 'Campo de golf',
-  swimming_pool: 'Piscina',
-  // Vías y transporte
-  motorway: 'Autopista',
-  trunk: 'Autovía',
-  primary: 'Carretera principal',
-  secondary: 'Carretera',
-  tertiary: 'Carretera',
-  residential: 'Calle',
-  service: 'Vía de servicio',
-  pedestrian: 'Zona peatonal',
-  footway: 'Camino peatonal',
-  cycleway: 'Carril bici',
-  path: 'Sendero',
-  living_street: 'Calle residencial',
-  station: 'Estación',
-  halt: 'Apeadero',
-  tram_stop: 'Parada de tranvía',
-  subway_entrance: 'Entrada de metro',
-  // Edificaciones y zonas
-  building: 'Edificio',
-  apartments: 'Edificios',
-  commercial: 'Edificio comercial',
-  industrial: 'Polígono industrial',
-  retail: 'Zona comercial',
-  farmland: 'Cultivos',
-  grass: 'Zona verde',
-  administrative: 'Zona administrativa',
-  // Monumentos
-  monument: 'Monumento',
-  memorial: 'Memorial',
-  castle: 'Castillo',
-  ruins: 'Ruinas',
-  church: 'Iglesia',
+const KIND_BY_KEY: Record<string, TranslationKey> = {
+  'highway:residential': 'places.kind.street',
+  'landuse:residential': 'places.kind.residential_area',
+  'place:locality': 'places.kind.locality',
+  'place:city': 'places.kind.city',
+  'place:town': 'places.kind.town',
+  'place:village': 'places.kind.village',
+  'place:hamlet': 'places.kind.hamlet',
+  'shop:car': 'places.kind.car',
+  'shop:car_repair': 'places.kind.car_repair',
+  'shop:car_parts': 'places.kind.car_parts',
+  'shop:fuel': 'places.kind.fuel',
+  'amenity:fuel': 'places.kind.fuel',
+  'amenity:parking': 'places.kind.parking',
+  'boundary:administrative': 'places.kind.administrative',
+  'building:yes': 'places.kind.building',
+  'building:house': 'places.kind.building',
 };
-
-const KIND_BY_KEY: Record<string, string> = {
-  'highway:residential': 'Calle',
-  'landuse:residential': 'Zona residencial',
-  'place:locality': 'Localidad',
-  'place:city': 'Ciudad',
-  'place:town': 'Villa',
-  'place:village': 'Pueblo',
-  'place:hamlet': 'Aldea',
-  'shop:car': 'Concesionario',
-  'shop:car_repair': 'Taller',
-  'shop:car_parts': 'Recambios',
-  'shop:fuel': 'Gasolinera',
-  'amenity:fuel': 'Gasolinera',
-  'amenity:parking': 'Parking',
-  'boundary:administrative': 'Zona administrativa',
-  'building:yes': 'Edificio',
-  'building:house': 'Edificio',
-};
-
-const TYPE_LABELS: Record<string, string> = {
-  house: 'Dirección',
-  street: 'Calle',
-  locality: 'Localidad',
-  city: 'Ciudad',
-  district: 'Distrito',
-  other: 'Lugar',
-};
-
-const SPANISH_REGIONS =
-  typeof Intl.DisplayNames === 'undefined'
-    ? null
-    : new Intl.DisplayNames(['es'], { type: 'region' });
 
 @Injectable({ providedIn: 'root' })
 export class PlaceSearchService {
   private readonly http = inject(HttpClient);
+  private readonly i18n = inject(I18nService);
   private readonly base = 'https://photon.komoot.io';
 
   search(
@@ -307,11 +150,11 @@ export class PlaceSearchService {
     const street = [properties.street, properties.housenumber].filter(Boolean).join(' ');
     const city = [properties.postcode, properties.city].filter(Boolean).join(' ');
     const country = this.countryName(properties.countrycode, properties.country);
-    const fallback = properties.city ?? properties.district ?? country ?? 'Lugar';
+    const fallback = properties.city ?? properties.district ?? country ?? this.i18n.t('places.kind.other');
     const name = this.clean(properties.name) ?? this.clean(street) ?? fallback;
     // No usamos `state`: Photon a veces devuelve el nombre administrativo
     // en un idioma inesperado (p. ej. "Katalonien"). Ciudad + país bastan
-    // para identificar la ubicación y el país se muestra en español.
+    // para identificar la ubicación y el país se muestra en el idioma activo.
     const address = [street, city, country]
       .map((part) => this.clean(part))
       .filter((part, index, all): part is string => Boolean(part) && all.indexOf(part) === index)
@@ -338,8 +181,8 @@ export class PlaceSearchService {
 
   private countryName(code: string | undefined, fallback: string | undefined): string | null {
     const normalized = code?.trim().toUpperCase();
-    if (normalized && SPANISH_REGIONS) {
-      const translated = SPANISH_REGIONS.of(normalized);
+    if (normalized && typeof Intl.DisplayNames !== 'undefined') {
+      const translated = new Intl.DisplayNames([this.i18n.locale()], { type: 'region' }).of(normalized);
       if (translated) {
         return translated;
       }
@@ -350,12 +193,19 @@ export class PlaceSearchService {
   private kindLabel(properties: PhotonFeature['properties']): string {
     const keyed = KIND_BY_KEY[`${properties.osm_key ?? ''}:${properties.osm_value ?? ''}`];
     if (keyed) {
-      return keyed;
+      return this.i18n.t(keyed);
     }
-    const direct = KIND_LABELS[properties.osm_value ?? ''];
-    if (direct) {
-      return direct;
+
+    const direct = `places.kind.${properties.osm_value ?? ''}`;
+    if (hasTranslation(direct)) {
+      return this.i18n.t(direct);
     }
-    return TYPE_LABELS[properties.type ?? ''] ?? 'Lugar';
+
+    const type = `places.kind.${properties.type ?? 'other'}`;
+    if (hasTranslation(type)) {
+      return this.i18n.t(type);
+    }
+
+    return this.i18n.t('places.kind.other');
   }
 }

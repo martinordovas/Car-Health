@@ -1,4 +1,7 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
+import { consumption, price } from '../../core/format';
+import { I18nService } from '../../core/i18n.service';
+import { TranslatePipe } from '../i18n/translate.pipe';
 
 export interface LinePoint {
   label: string;
@@ -19,6 +22,7 @@ interface ChartGeometry {
 
 @Component({
   selector: 'app-line-chart',
+  imports: [TranslatePipe],
   template: `
     @if (geometry().hasData) {
       <div class="relative">
@@ -26,7 +30,12 @@ interface ChartGeometry {
           <span>{{ geometry().maxLabel }}</span>
           <span>{{ geometry().minLabel }}</span>
         </div>
-        <svg class="ml-7 h-auto w-[calc(100%-1.75rem)]" viewBox="0 0 600 210" role="img" [attr.aria-label]="ariaLabel()">
+        <svg
+          class="ml-7 h-auto w-[calc(100%-1.75rem)]"
+          viewBox="0 0 600 210"
+          role="img"
+          [attr.aria-label]="ariaLabel() || ('charts.defaultAria' | t)"
+        >
           <defs>
             <linearGradient [attr.id]="fillId" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" [attr.stop-color]="strokeColor()" stop-opacity=".2" />
@@ -60,19 +69,21 @@ interface ChartGeometry {
       </div>
     } @else {
       <div class="flex h-44 flex-col items-center justify-center rounded-2xl border border-dashed border-line bg-surface-soft text-center">
-        <p class="text-sm font-semibold text-muted">Aún no hay datos suficientes</p>
-        <p class="mt-1 text-xs text-faint">Necesitas al menos un repostaje completo.</p>
+        <p class="text-sm font-semibold text-muted">{{ 'charts.noDataTitle' | t }}</p>
+        <p class="mt-1 text-xs text-faint">{{ 'charts.noDataDescription' | t }}</p>
       </div>
     }
   `,
 })
 export class LineChartComponent {
+  private readonly i18n = inject(I18nService);
   readonly data = input<LinePoint[]>([]);
   readonly kind = input<'consumption' | 'price'>('consumption');
-  readonly ariaLabel = input('Gráfico de evolución');
+  readonly ariaLabel = input('');
   readonly fillId = `line-${Math.random().toString(36).slice(2, 8)}`;
 
   protected readonly geometry = computed<ChartGeometry>(() => {
+    this.i18n.locale();
     const points = this.data().filter((point) => Number.isFinite(point.value));
     if (points.length === 0) {
       return {
@@ -128,8 +139,6 @@ export class LineChartComponent {
   );
 
   protected formatValue(value: number): string {
-    return this.kind() === 'consumption'
-      ? `${value.toLocaleString('es-ES', { maximumFractionDigits: 1 })} L`
-      : `${value.toLocaleString('es-ES', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} €`;
+    return this.kind() === 'consumption' ? consumption(value) : price(value);
   }
 }

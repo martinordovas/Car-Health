@@ -3,6 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ConnectivityService } from './connectivity.service';
 import { errorMessage, isNetworkError } from './format';
+import { I18nService } from './i18n.service';
 import type { MutationKind, QueuedMutation } from './models';
 import { OfflineStoreService } from './offline-store.service';
 import { SessionService } from './session.service';
@@ -14,6 +15,7 @@ export class OfflineQueueService {
   private readonly store = inject(OfflineStoreService);
   private readonly session = inject(SessionService);
   private readonly connectivity = inject(ConnectivityService);
+  private readonly i18n = inject(I18nService);
   private readonly toast = inject(ToastService);
 
   private readonly state = signal<QueuedMutation[]>([]);
@@ -66,7 +68,7 @@ export class OfflineQueueService {
   }): Promise<void> {
     const userId = this.session.userId();
     if (userId === null) {
-      throw new Error('Inicia sesión para guardar cambios.');
+      throw new Error(this.i18n.t('errors.loginRequired'));
     }
     const item: QueuedMutation = {
       ...input,
@@ -121,10 +123,10 @@ export class OfflineQueueService {
     }
 
     if (synced > 0) {
-      this.toast.success(synced === 1 ? 'Cambio sincronizado con el servidor.' : `${synced} cambios sincronizados.`);
+      this.toast.success(this.i18n.plural('sync.toastSynced', synced));
     }
     if (failed > 0) {
-      this.toast.error(failed === 1 ? 'Un cambio no se pudo sincronizar.' : `${failed} cambios no se pudieron sincronizar.`);
+      this.toast.error(this.i18n.plural('sync.toastFailed', failed));
     }
   }
 

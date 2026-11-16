@@ -4,17 +4,22 @@
       <app-logo />
     </div>
 
-    <nav class="mt-9 flex flex-1 flex-col gap-1" aria-label="Navegación principal">
-      <p class="mb-2 px-3 text-[9px] font-bold uppercase tracking-[0.16em] text-faint">Tu garaje</p>
+    <nav
+      class="mt-9 flex flex-1 flex-col gap-1"
+      [attr.aria-label]="'layout.aria.mainNav' | t"
+    >
+      <p class="mb-2 px-3 text-[9px] font-bold uppercase tracking-[0.16em] text-faint">
+        {{ 'layout.garageSection' | t }}
+      </p>
       @for (item of navItems; track item.path) {
         <a
           [routerLink]="item.path"
           routerLinkActive="nav-link-active"
           class="nav-link"
-          [attr.aria-label]="item.label"
+          [attr.aria-label]="item.labelKey | t"
         >
           <app-icon [name]="item.icon" [size]="19" />
-          <span>{{ item.label }}</span>
+          <span>{{ item.labelKey | t }}</span>
           @if (item.path === '/app/dashboard' && store.selected(); as vehicle) {
             <span class="ml-auto h-1.5 w-1.5 rounded-full bg-accent opacity-0 transition-opacity group-[.nav-link-active]:opacity-100"></span>
           }
@@ -25,7 +30,7 @@
     <div class="space-y-3 px-1">
       <button type="button" class="btn btn-accent w-full" (click)="quickAdd.set(true)">
         <app-icon name="plus" [size]="17" />
-        Añadir registro
+        {{ 'layout.addRecord' | t }}
       </button>
 
       <div class="rounded-2xl border border-line bg-surface-soft p-3.5">
@@ -38,15 +43,19 @@
             {{ connectivity.label() }}
           </span>
           @if (queue.pendingCount() > 0) {
-            <span class="chip chip-warning">{{ queue.pendingCount() }} pend.</span>
+            <span class="chip chip-warning">{{
+              'layout.pendingShort' | t: { count: queue.pendingCount() }
+            }}</span>
           } @else if (queue.failedCount() > 0) {
-            <span class="chip chip-danger">{{ queue.failedCount() }} error</span>
+            <span class="chip chip-danger">{{
+              'layout.errorShort' | t: { count: queue.failedCount() }
+            }}</span>
           } @else {
             <app-icon name="check-circle" [size]="14" class="text-success" />
           }
         </div>
         <p class="mt-2 text-[10px] leading-relaxed text-faint">
-          Tus datos se guardan también en este dispositivo. Los cambios pendientes se envían solos.
+          {{ 'layout.localDataHint' | t }}
         </p>
       </div>
 
@@ -61,8 +70,8 @@
         <button
           type="button"
           class="icon-btn size-8 shrink-0"
-          title="Cerrar sesión"
-          aria-label="Cerrar sesión"
+          [attr.title]="'layout.logout' | t"
+          [attr.aria-label]="'layout.logout' | t"
           (click)="$event.preventDefault(); $event.stopPropagation(); logout()"
         >
           <app-icon name="logout" [size]="16" />
@@ -73,28 +82,29 @@
 
   <div class="min-h-dvh lg:pl-[272px]">
     <header class="sticky top-0 z-30 border-b border-line bg-canvas/80 backdrop-blur-xl">
-      <div class="mx-auto flex h-[68px] max-w-[1400px] items-center gap-3 px-4 sm:px-6 lg:h-[78px] lg:px-8">
+      <div class="mx-auto flex h-[68px] max-w-[1400px] items-center gap-2 px-3 sm:gap-3 sm:px-6 lg:h-[78px] lg:px-8">
         <div class="lg:hidden">
           <app-logo [markOnly]="true" />
         </div>
         <app-vehicle-switcher />
-        <div class="ml-auto flex items-center gap-1.5">
+        <div class="ml-auto flex items-center gap-1 sm:gap-1.5">
           <span class="me-1 hidden items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 py-1.5 text-[10px] font-semibold text-muted xl:inline-flex">
             <span class="size-1.5 rounded-full" [class]="connectivity.offline() ? 'bg-warning' : 'bg-success'"></span>
             {{ connectivity.label() }}
           </span>
+          <app-language-toggle />
           <app-theme-toggle />
           <a
             routerLink="/app/garage"
             class="grid size-9 place-items-center rounded-full bg-brand-soft text-xs font-extrabold text-brand transition hover:ring-4 hover:ring-brand/10 dark:text-accent"
             [attr.title]="session.user()?.displayName"
-            aria-label="Ir a mi garaje y ajustes"
+            [attr.aria-label]="'layout.avatarAria' | t"
           >
             {{ initials() }}
           </a>
           <button type="button" class="btn btn-primary btn-sm ms-1 hidden lg:inline-flex" (click)="quickAdd.set(true)">
             <app-icon name="plus" [size]="16" />
-            Añadir
+            {{ 'layout.add' | t }}
           </button>
         </div>
       </div>
@@ -108,7 +118,7 @@
 
   <nav
     class="safe-bottom fixed inset-x-0 bottom-0 z-50 border-t border-line bg-surface/95 backdrop-blur-xl lg:hidden"
-    aria-label="Navegación principal móvil"
+    [attr.aria-label]="'layout.aria.mobileNav' | t"
   >
     <div class="mx-auto grid h-[70px] max-w-lg grid-cols-5 items-end px-2">
       <a
@@ -121,7 +131,7 @@
         <span class="grid size-8 place-items-center rounded-xl transition-colors" [class.bg-brand-soft]="homeLink.isActive">
           <app-icon name="home" [size]="19" />
         </span>
-        Inicio
+        {{ 'layout.navHome' | t }}
       </a>
       <a
         routerLink="/app/fuel"
@@ -133,14 +143,14 @@
         <span class="grid size-8 place-items-center rounded-xl transition-colors" [class.bg-brand-soft]="fuelLink.isActive">
           <app-icon name="fuel" [size]="19" />
         </span>
-        Repostar
+        {{ 'layout.navFuelShort' | t }}
       </a>
       <div class="flex h-full items-center justify-center">
         <button
           type="button"
           class="-mt-6 grid size-[52px] place-items-center rounded-full bg-accent text-accent-ink shadow-[0_14px_34px_-12px_rgba(201,242,92,0.85)] transition active:scale-95"
           (click)="quickAdd.set(true)"
-          aria-label="Añadir repostaje o mantenimiento"
+          [attr.aria-label]="'layout.quickAddAria' | t"
         >
           <app-icon name="plus" [size]="24" [strokeWidth]="2.4" />
         </button>
@@ -155,7 +165,7 @@
         <span class="grid size-8 place-items-center rounded-xl transition-colors" [class.bg-brand-soft]="serviceLink.isActive">
           <app-icon name="wrench" [size]="19" />
         </span>
-        Taller
+        {{ 'layout.navMaintenanceShort' | t }}
       </a>
       <a
         routerLink="/app/stats"
@@ -167,7 +177,7 @@
         <span class="grid size-8 place-items-center rounded-xl transition-colors" [class.bg-brand-soft]="statsLink.isActive">
           <app-icon name="chart" [size]="19" />
         </span>
-        Gráficas
+        {{ 'layout.navStatsShort' | t }}
       </a>
     </div>
   </nav>

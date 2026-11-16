@@ -3,11 +3,15 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../core/auth.service';
 import { ConnectivityService } from '../core/connectivity.service';
 import { errorMessage, initials } from '../core/format';
+import { I18nService } from '../core/i18n.service';
+import type { TranslationKey } from '../core/i18n';
 import { OfflineQueueService } from '../core/offline-queue.service';
 import { SessionService } from '../core/session.service';
 import { ToastService } from '../core/toast.service';
 import { VehicleStore } from '../core/vehicle-store.service';
 import { IconComponent, type IconName } from '../shared/icon/icon';
+import { LanguageToggleComponent } from '../shared/i18n/language-toggle';
+import { TranslatePipe } from '../shared/i18n/translate.pipe';
 import { LogoComponent } from '../shared/logo/logo';
 import { QuickAddSheetComponent } from '../shared/quick-add-sheet/quick-add-sheet';
 import { SyncBannerComponent } from '../shared/sync-banner/sync-banner';
@@ -15,8 +19,7 @@ import { ThemeToggleComponent } from '../shared/theme-toggle/theme-toggle';
 import { VehicleSwitcherComponent } from '../shared/vehicle-switcher/vehicle-switcher';
 
 interface NavItem {
-  label: string;
-  shortLabel: string;
+  labelKey: TranslationKey;
   path: string;
   icon: IconName;
 }
@@ -28,10 +31,12 @@ interface NavItem {
     RouterLink,
     RouterLinkActive,
     IconComponent,
+    LanguageToggleComponent,
     LogoComponent,
     QuickAddSheetComponent,
     SyncBannerComponent,
     ThemeToggleComponent,
+    TranslatePipe,
     VehicleSwitcherComponent,
   ],
   templateUrl: './app-layout.html',
@@ -41,6 +46,7 @@ export class AppLayoutComponent implements OnInit {
   readonly session = inject(SessionService);
   readonly queue = inject(OfflineQueueService);
   readonly connectivity = inject(ConnectivityService);
+  readonly i18n = inject(I18nService);
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
 
@@ -48,14 +54,12 @@ export class AppLayoutComponent implements OnInit {
   readonly initials = computed(() => initials(this.session.user()?.displayName));
 
   readonly navItems: NavItem[] = [
-    { label: 'Inicio', shortLabel: 'Inicio', path: '/app/dashboard', icon: 'home' },
-    { label: 'Repostajes', shortLabel: 'Repostar', path: '/app/fuel', icon: 'fuel' },
-    { label: 'Mantenimiento', shortLabel: 'Taller', path: '/app/services', icon: 'wrench' },
-    { label: 'Estadísticas', shortLabel: 'Gráficas', path: '/app/stats', icon: 'chart' },
-    { label: 'Mi garaje', shortLabel: 'Garaje', path: '/app/garage', icon: 'garage' },
+    { labelKey: 'layout.navHome', path: '/app/dashboard', icon: 'home' },
+    { labelKey: 'layout.navFuel', path: '/app/fuel', icon: 'fuel' },
+    { labelKey: 'layout.navMaintenance', path: '/app/services', icon: 'wrench' },
+    { labelKey: 'layout.navStats', path: '/app/stats', icon: 'chart' },
+    { labelKey: 'layout.navGarage', path: '/app/garage', icon: 'garage' },
   ];
-
-  readonly mobileNav = this.navItems.slice(0, 4);
 
   ngOnInit(): void {
     this.store.load().subscribe({
@@ -67,7 +71,7 @@ export class AppLayoutComponent implements OnInit {
   logout(): void {
     if (this.queue.pendingCount() > 0) {
       const confirmed = window.confirm(
-        `Tienes ${this.queue.pendingCount()} cambio(s) sin sincronizar. Permanecerán guardados en este dispositivo y se enviarán la próxima vez que entres con esta cuenta. ¿Cerrar sesión?`,
+        this.i18n.t('layout.logoutConfirm', { count: this.queue.pendingCount() }),
       );
       if (!confirmed) return;
     }

@@ -9,12 +9,14 @@ import {
   errorMessage,
   km,
   money,
-  PERFORMED_BY_LABELS,
+  performedByLabel,
   remainingDays,
   remainingKm,
+  ruleName,
   statusLabel,
   statusTone,
 } from '../../core/format';
+import { I18nService } from '../../core/i18n.service';
 import { MaintenanceService } from '../../core/maintenance.service';
 import type { MaintenanceRule, ServiceRecord } from '../../core/models';
 import { OfflineQueueService } from '../../core/offline-queue.service';
@@ -23,22 +25,27 @@ import { ToastService } from '../../core/toast.service';
 import { VehicleStore } from '../../core/vehicle-store.service';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
 import { IconComponent } from '../../shared/icon/icon';
+import { TranslatePipe } from '../../shared/i18n/translate.pipe';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 
 type Tab = 'plan' | 'history';
 
 @Component({
   selector: 'app-maintenance-page',
-  imports: [RouterLink, IconComponent, PageHeaderComponent, EmptyStateComponent],
+  imports: [RouterLink, IconComponent, PageHeaderComponent, EmptyStateComponent, TranslatePipe],
   templateUrl: './maintenance-page.html',
 })
 export class MaintenancePageComponent {
   private readonly maintenanceService = inject(MaintenanceService);
+  private readonly i18n = inject(I18nService);
   private readonly serviceRecordService = inject(ServiceRecordService);
   private readonly queue = inject(OfflineQueueService);
   private readonly toast = inject(ToastService);
   readonly store = inject(VehicleStore);
 
+  readonly vehicleName = computed(
+    () => this.store.selected()?.name ?? this.i18n.t('common.yourCar'),
+  );
   readonly rules = signal<MaintenanceRule[]>([]);
   readonly records = signal<ServiceRecord[]>([]);
   readonly loading = signal(false);
@@ -52,7 +59,8 @@ export class MaintenancePageComponent {
   protected readonly decimal = decimal;
   protected readonly categoryLabel = categoryLabel;
   protected readonly categoryTone = categoryTone;
-  protected readonly performedByLabel = PERFORMED_BY_LABELS;
+  protected readonly performedByLabel = performedByLabel;
+  protected readonly ruleName = ruleName;
   protected readonly statusLabel = statusLabel;
   protected readonly statusTone = statusTone;
   protected readonly remainingKm = remainingKm;
@@ -78,7 +86,10 @@ export class MaintenancePageComponent {
     () => this.rules().filter((rule) => rule.status === 'DUE_SOON').length,
   );
   readonly nextRule = computed(
-    () => this.rules().find((rule) => rule.status === 'OVERDUE' || rule.status === 'DUE_SOON') ?? this.rules()[0] ?? null,
+    () =>
+      this.rules().find((rule) => rule.status === 'OVERDUE' || rule.status === 'DUE_SOON') ??
+      this.rules()[0] ??
+      null,
   );
 
   constructor() {

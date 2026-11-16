@@ -1,11 +1,13 @@
 import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { km } from '../../core/format';
 import { VehicleStore } from '../../core/vehicle-store.service';
 import { IconComponent } from '../../shared/icon/icon';
+import { TranslatePipe } from '../i18n/translate.pipe';
 
 @Component({
   selector: 'app-vehicle-switcher',
-  imports: [RouterLink, IconComponent],
+  imports: [RouterLink, IconComponent, TranslatePipe],
   template: `
     <div class="relative" (click)="$event.stopPropagation()">
       @if (store.selected(); as vehicle) {
@@ -30,8 +32,8 @@ import { IconComponent } from '../../shared/icon/icon';
       } @else {
         <a routerLink="/app/garage" class="btn btn-surface btn-sm">
           <app-icon name="plus" [size]="15" />
-          <span class="hidden sm:inline">Añadir coche</span>
-          <span class="sm:hidden">Coche</span>
+          <span class="hidden sm:inline">{{ 'vehicleSwitcher.add' | t }}</span>
+          <span class="sm:hidden">{{ 'vehicleSwitcher.addShort' | t }}</span>
         </a>
       }
 
@@ -41,7 +43,9 @@ import { IconComponent } from '../../shared/icon/icon';
           role="listbox"
         >
           <div class="flex items-center justify-between px-4 pb-2 pt-3.5">
-            <p class="text-[10px] font-bold uppercase tracking-[0.12em] text-faint">Tu garaje</p>
+            <p class="text-[10px] font-bold uppercase tracking-[0.12em] text-faint">
+              {{ 'vehicleSwitcher.yourGarage' | t }}
+            </p>
             <span class="chip chip-neutral">{{ store.vehicles().length }}</span>
           </div>
           <div class="max-h-72 overflow-y-auto px-2 pb-2">
@@ -58,7 +62,9 @@ import { IconComponent } from '../../shared/icon/icon';
                 </span>
                 <span class="min-w-0 flex-1">
                   <span class="block truncate text-xs font-bold">{{ vehicle.name }}</span>
-                  <span class="block truncate text-[10px] text-faint">{{ vehicle.licensePlate || vehicle.model }} · {{ vehicle.currentOdometer.toLocaleString('es-ES') }} km</span>
+                  <span class="block truncate text-[10px] text-faint"
+                    >{{ vehicle.licensePlate || vehicle.model }} · {{ km(vehicle.currentOdometer) }}</span
+                  >
                 </span>
                 @if (vehicle.id === store.selected()?.id) {
                   <app-icon name="check" [size]="15" class="text-brand dark:text-accent" />
@@ -69,7 +75,7 @@ import { IconComponent } from '../../shared/icon/icon';
           <div class="border-t border-line p-2">
             <a routerLink="/app/garage" class="flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold text-muted transition hover:bg-surface-soft hover:text-ink" (click)="close()">
               <app-icon name="garage" [size]="16" />
-              Gestionar garaje
+              {{ 'vehicleSwitcher.manage' | t }}
               <app-icon name="chevron-right" [size]="14" class="ms-auto" />
             </a>
           </div>
@@ -81,6 +87,7 @@ import { IconComponent } from '../../shared/icon/icon';
 export class VehicleSwitcherComponent {
   readonly store = inject(VehicleStore);
   readonly open = signal(false);
+  protected readonly km = km;
 
   @HostListener('document:click')
   @HostListener('document:keydown.escape')

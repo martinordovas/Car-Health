@@ -12,11 +12,15 @@ import {
   fuelName,
   km,
   money,
+  price,
   remainingDays,
   remainingKm,
+  ruleName,
   statusLabel,
   statusTone,
 } from '../../core/format';
+import { I18nService } from '../../core/i18n.service';
+import { localeTag } from '../../core/i18n';
 import type { Dashboard, MaintenanceRule, VehicleStats } from '../../core/models';
 import { StatsService } from '../../core/stats.service';
 import { OfflineQueueService } from '../../core/offline-queue.service';
@@ -25,6 +29,7 @@ import { ToastService } from '../../core/toast.service';
 import { VehicleStore } from '../../core/vehicle-store.service';
 import { SpendChartComponent } from '../../shared/charts/spend-chart';
 import { IconComponent } from '../../shared/icon/icon';
+import { TranslatePipe } from '../../shared/i18n/translate.pipe';
 import { StatCardComponent } from '../../shared/stat-card/stat-card';
 import { VehicleVisualComponent } from '../../shared/vehicle-visual/vehicle-visual';
 
@@ -35,6 +40,7 @@ import { VehicleVisualComponent } from '../../shared/vehicle-visual/vehicle-visu
     IconComponent,
     StatCardComponent,
     SpendChartComponent,
+    TranslatePipe,
     VehicleVisualComponent,
   ],
   templateUrl: './dashboard-page.html',
@@ -45,6 +51,7 @@ export class DashboardPageComponent {
   private readonly toast = inject(ToastService);
   readonly store = inject(VehicleStore);
   readonly session = inject(SessionService);
+  readonly i18n = inject(I18nService);
   private readonly queue = inject(OfflineQueueService);
 
   readonly dashboard = signal<Dashboard | null>(null);
@@ -65,24 +72,32 @@ export class DashboardPageComponent {
   protected readonly categoryLabel = categoryLabel;
   protected readonly fuelName = fuelName;
   protected readonly decimal = decimal;
+  protected readonly price = price;
+  protected readonly ruleName = ruleName;
 
   readonly greeting = computed(() => {
+    this.i18n.locale();
     const hour = new Date().getHours();
-    if (hour < 6) return 'Buenas noches';
-    if (hour < 14) return 'Buenos días';
-    return 'Buenas tardes';
+    if (hour < 6) return this.i18n.t('dashboard.greetingNight');
+    if (hour < 14) return this.i18n.t('dashboard.greetingMorning');
+    return this.i18n.t('dashboard.greetingAfternoon');
   });
 
-  readonly today = new Intl.DateTimeFormat('es-ES', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  }).format(new Date());
+  readonly today = computed(() => {
+    const tag = localeTag(this.i18n.locale());
+    return new Intl.DateTimeFormat(tag, {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    }).format(new Date());
+  });
 
   readonly totalFuelSpent = computed(() => this.stats()?.totals.fuelSpent ?? 0);
   readonly totalServiceSpent = computed(() => this.stats()?.totals.serviceSpent ?? 0);
   readonly bestStation = computed(() => this.stats()?.stations?.[0] ?? null);
-  readonly nextMaintenance = computed(() => this.dashboard()?.upcomingMaintenance?.slice(0, 3) ?? []);
+  readonly nextMaintenance = computed(
+    () => this.dashboard()?.upcomingMaintenance?.slice(0, 3) ?? [],
+  );
 
   constructor() {
     effect(() => {

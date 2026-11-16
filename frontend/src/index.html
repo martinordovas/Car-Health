@@ -21,12 +21,14 @@
           var saved = localStorage.getItem('ch-theme');
           var dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
           if (dark) document.documentElement.classList.add('dark');
+          var locale = localStorage.getItem('ch-locale');
+          if (locale === 'en' || locale === 'es') document.documentElement.lang = locale;
         } catch (e) {}
       })();
     </script>
   </head>
   <body>
     <app-root></app-root>
-    <noscript>Activa JavaScript para usar Car Health.</noscript>
+    <noscript>Activa JavaScript para usar Car Health. · Enable JavaScript to use Car Health.</noscript>
   </body>
 </html>

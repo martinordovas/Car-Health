@@ -205,6 +205,7 @@
   }
 
   .card {
+    min-width: 0;
     background: var(--ch-surface);
     border: 1px solid var(--ch-line);
     border-radius: 24px;
@@ -212,6 +213,7 @@
   }
 
   .card-flat {
+    min-width: 0;
     background: var(--ch-surface);
     border: 1px solid var(--ch-line);
     border-radius: 20px;

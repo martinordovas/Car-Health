@@ -1,12 +1,14 @@
 @if (!store.selected()) {
   <div class="mx-auto max-w-lg pt-10">
     <div class="card p-8 text-center">
-      <span class="mx-auto grid size-14 place-items-center rounded-2xl bg-brand-soft text-brand dark:text-accent">
+      <span
+        class="mx-auto grid size-14 place-items-center rounded-2xl bg-brand-soft text-brand dark:text-accent"
+      >
         <app-icon name="car" [size]="26" />
       </span>
-      <h1 class="mt-5 text-xl font-bold">Añade un coche primero</h1>
-      <p class="mt-2 text-sm text-muted">Necesitamos un vehículo para guardar su historial de mantenimiento.</p>
-      <a routerLink="/app/garage" class="btn btn-primary mt-5">Ir a mi garaje</a>
+      <h1 class="mt-5 text-xl font-bold">{{ 'serviceForm.noCarTitle' | t }}</h1>
+      <p class="mt-2 text-sm text-muted">{{ 'serviceForm.noCarDescription' | t }}</p>
+      <a routerLink="/app/garage" class="btn btn-primary mt-5">{{ 'serviceForm.goGarage' | t }}</a>
     </div>
   </div>
 } @else {
@@ -14,50 +16,60 @@
     <div class="mb-5">
       <a routerLink="/app/services" class="btn btn-ghost btn-sm -ms-3 text-muted">
         <app-icon name="arrow-left" [size]="15" />
-        Volver a mantenimiento
+        {{ 'serviceForm.back' | t }}
       </a>
     </div>
 
     <app-page-header
-      eyebrow="Mantenimiento"
-      title="Nueva intervención"
-      [subtitle]="'Registra las intervenciones de ' + (store.selected()?.name ?? 'tu coche') + ', con recambios y costes.'"
+      [eyebrow]="'serviceForm.eyebrow' | t"
+      [title]="'serviceForm.title' | t"
+      [subtitle]="'serviceForm.subtitle' | t: { vehicle: vehicleName() }"
     >
       <span class="chip chip-neutral">
         <app-icon name="cloud-off" [size]="12" />
-        Se puede guardar offline
+        {{ 'serviceForm.offlineChip' | t }}
       </span>
     </app-page-header>
 
     @if (error()) {
-      <div class="mb-5 flex items-start gap-2.5 rounded-2xl border border-danger/20 bg-danger-soft px-4 py-3 text-danger" role="alert">
+      <div
+        class="mb-5 flex items-start gap-2.5 rounded-2xl border border-danger/20 bg-danger-soft px-4 py-3 text-danger"
+        role="alert"
+      >
         <app-icon name="alert-triangle" [size]="17" class="mt-0.5 shrink-0" />
         <p class="text-xs font-semibold leading-relaxed">{{ error() }}</p>
       </div>
     }
 
-    <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-      <div class="space-y-4">
+    <form
+      [formGroup]="form"
+      (ngSubmit)="submit()"
+      novalidate
+      class="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px]"
+    >
+      <div class="min-w-0 space-y-4">
         <section class="card p-5 sm:p-6">
           <div class="mb-5 flex items-center gap-3">
-            <span class="grid size-9 place-items-center rounded-xl bg-brand-soft text-brand dark:text-accent">
+            <span
+              class="grid size-9 place-items-center rounded-xl bg-brand-soft text-brand dark:text-accent"
+            >
               <app-icon name="wrench" [size]="17" />
             </span>
             <div>
-              <h2 class="section-title">Qué has hecho</h2>
-              <p class="text-[11px] text-muted">El contexto de la intervención.</p>
+              <h2 class="section-title">{{ 'serviceForm.whatTitle' | t }}</h2>
+              <p class="text-[11px] text-muted">{{ 'serviceForm.whatHint' | t }}</p>
             </div>
           </div>
 
           <div class="space-y-4">
             <div>
-              <label class="label" for="title">Título de la intervención</label>
+              <label class="label" for="title">{{ 'serviceForm.titleLabel' | t }}</label>
               <input
                 id="title"
                 class="field"
                 formControlName="title"
                 [class.field-error]="fieldError('title')"
-                placeholder="Cambio de aceite y filtro, pastillas de freno…"
+                [attr.placeholder]="'serviceForm.titlePlaceholder' | t"
               />
               @if (fieldError('title'); as message) {
                 <p class="error-text">{{ message }}</p>
@@ -66,14 +78,14 @@
 
             <div class="grid gap-4 sm:grid-cols-2">
               <div>
-                <label class="label" for="date">Fecha</label>
+                <label class="label" for="date">{{ 'serviceForm.dateLabel' | t }}</label>
                 <input id="date" type="date" class="field" formControlName="date" />
                 @if (fieldError('date'); as message) {
                   <p class="error-text">{{ message }}</p>
                 }
               </div>
               <div>
-                <label class="label" for="odometer">Kilómetros</label>
+                <label class="label" for="odometer">{{ 'serviceForm.odometerLabel' | t }}</label>
                 <div class="field-shell">
                   <span class="field-icon"><app-icon name="gauge" [size]="17" /></span>
                   <input
@@ -83,22 +95,22 @@
                     class="field field-unit"
                     formControlName="odometer"
                     [class.field-error]="fieldError('odometer')"
-                    placeholder="48.320"
+                    [attr.placeholder]="'serviceForm.odometerPlaceholder' | t"
                   />
-                  <span class="field-suffix">km</span>
+                  <span class="field-suffix">{{ 'common.km' | t }}</span>
                 </div>
                 @if (fieldError('odometer'); as message) {
                   <p class="error-text">{{ message }}</p>
                 } @else {
-                  <p class="hint">Puedes registrar una intervención pasada con menos kilómetros.</p>
+                  <p class="hint">{{ 'serviceForm.odometerHint' | t }}</p>
                 }
               </div>
             </div>
 
             <div>
-              <span class="label">Tipo de intervención</span>
+              <span class="label">{{ 'serviceForm.categoryLabel' | t }}</span>
               <div class="grid grid-cols-2 gap-2">
-                @for (option of categories; track option.value) {
+                @for (option of categories(); track option.value) {
                   <button
                     type="button"
                     class="flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition"
@@ -109,7 +121,11 @@
                   >
                     <span
                       class="grid size-8 shrink-0 place-items-center rounded-lg"
-                      [class]="form.controls.category.value === option.value ? 'bg-brand text-accent' : 'bg-surface-soft text-muted'"
+                      [class]="
+                        form.controls.category.value === option.value
+                          ? 'bg-brand text-accent'
+                          : 'bg-surface-soft text-muted'
+                      "
                     >
                       <app-icon [name]="categoryIcon(option.value)" [size]="15" />
                     </span>
@@ -123,19 +139,21 @@
             </div>
 
             <div>
-              <label class="label" for="ruleId">Vincular al plan preventivo <span class="font-normal text-faint">(opcional)</span></label>
+              <label class="label" for="ruleId">{{
+                'serviceForm.linkPlan' | t: { optional: ('common.optional' | t) }
+              }}</label>
               <select id="ruleId" class="field" formControlName="ruleId" (change)="applyRule()">
-                <option [ngValue]="null">Sin vincular</option>
+                <option [ngValue]="null">{{ 'serviceForm.unlinked' | t }}</option>
                 @for (rule of rules(); track rule.id) {
-                  <option [ngValue]="rule.id">{{ rule.name }}</option>
+                  <option [ngValue]="rule.id">{{ ruleName(rule.name) }}</option>
                 }
               </select>
               @if (selectedRule(); as rule) {
                 <p class="hint">
-                  Al guardar, actualizaremos el próximo vencimiento de “{{ rule.name }}”.
+                  {{ 'serviceForm.ruleSelectedHint' | t: { rule: ruleName(rule.name) } }}
                 </p>
               } @else {
-                <p class="hint">Vincúlalo para que el plan se actualice solo con esta intervención.</p>
+                <p class="hint">{{ 'serviceForm.ruleUnlinkedHint' | t }}</p>
               }
             </div>
           </div>
@@ -148,48 +166,74 @@
                 <app-icon name="settings" [size]="17" />
               </span>
               <div>
-                <h2 class="section-title">Recambios</h2>
-                <p class="text-[11px] text-muted">Desglosa las piezas que has usado.</p>
+                <h2 class="section-title">{{ 'serviceForm.partsTitle' | t }}</h2>
+                <p class="text-[11px] text-muted">{{ 'serviceForm.partsHint' | t }}</p>
               </div>
             </div>
             <button type="button" class="btn btn-surface btn-sm" (click)="addPart()">
               <app-icon name="plus" [size]="14" />
-              Añadir
+              {{ 'serviceForm.add' | t }}
             </button>
           </div>
 
           <div formArrayName="parts" class="space-y-3">
             @for (group of partGroups(); track group; let i = $index) {
-              <div [formGroupName]="i" class="rounded-2xl border border-line bg-surface-soft/60 p-3.5">
+              <div
+                [formGroupName]="i"
+                class="rounded-2xl border border-line bg-surface-soft/60 p-3.5"
+              >
                 <div class="mb-3 flex items-center justify-between">
-                  <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">Recambio {{ i + 1 }}</p>
-                  <button type="button" class="icon-btn size-8 text-faint hover:text-danger" (click)="removePart(i)" aria-label="Eliminar recambio">
+                  <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">
+                    {{ 'serviceForm.partNumber' | t: { number: i + 1 } }}
+                  </p>
+                  <button
+                    type="button"
+                    class="icon-btn size-8 text-faint hover:text-danger"
+                    (click)="removePart(i)"
+                    [attr.aria-label]="'serviceForm.deletePartAria' | t"
+                  >
                     <app-icon name="trash" [size]="15" />
                   </button>
                 </div>
                 <div class="grid gap-3 sm:grid-cols-2">
                   <div class="sm:col-span-2">
-                    <label class="label" [for]="'partName' + i">Nombre de la pieza</label>
+                    <label class="label" [for]="'partName' + i">{{
+                      'serviceForm.partNameLabel' | t
+                    }}</label>
                     <input
                       [id]="'partName' + i"
                       class="field"
                       formControlName="partName"
-                      placeholder="Filtro de aceite, pastillas delanteras…"
+                      [attr.placeholder]="'serviceForm.partNamePlaceholder' | t"
                     />
                     @if (partError(i, 'partName'); as message) {
                       <p class="error-text">{{ message }}</p>
                     }
                   </div>
                   <div>
-                    <label class="label" [for]="'brand' + i">Marca</label>
-                    <input [id]="'brand' + i" class="field" formControlName="brand" placeholder="Bosch, Brembo…" />
+                    <label class="label" [for]="'brand' + i">{{
+                      'serviceForm.brandLabel' | t
+                    }}</label>
+                    <input
+                      [id]="'brand' + i"
+                      class="field"
+                      formControlName="brand"
+                      [attr.placeholder]="'serviceForm.brandPlaceholder' | t"
+                    />
                   </div>
                   <div>
-                    <label class="label" [for]="'oem' + i">Referencia OEM</label>
-                    <input [id]="'oem' + i" class="field" formControlName="oemReference" placeholder="Opcional" />
+                    <label class="label" [for]="'oem' + i">{{ 'serviceForm.oemLabel' | t }}</label>
+                    <input
+                      [id]="'oem' + i"
+                      class="field"
+                      formControlName="oemReference"
+                      [attr.placeholder]="'serviceForm.oemPlaceholder' | t"
+                    />
                   </div>
                   <div>
-                    <label class="label" [for]="'quantity' + i">Cantidad</label>
+                    <label class="label" [for]="'quantity' + i">{{
+                      'serviceForm.quantityLabel' | t
+                    }}</label>
                     <input
                       [id]="'quantity' + i"
                       type="number"
@@ -203,7 +247,9 @@
                     }
                   </div>
                   <div>
-                    <label class="label" [for]="'unitPrice' + i">Precio unitario</label>
+                    <label class="label" [for]="'unitPrice' + i">{{
+                      'serviceForm.unitPriceLabel' | t
+                    }}</label>
                     <div class="field-shell">
                       <span class="field-icon"><app-icon name="euro" [size]="15" /></span>
                       <input
@@ -221,13 +267,17 @@
                     }
                   </div>
                 </div>
-                <p class="mt-2 text-right text-[11px] font-semibold text-muted">Subtotal: {{ money(lineTotal(i)) }}</p>
+                <p class="mt-2 text-right text-[11px] font-semibold text-muted">
+                  {{ 'serviceForm.subtotal' | t: { value: money(lineTotal(i)) } }}
+                </p>
               </div>
             } @empty {
-              <div class="rounded-2xl border border-dashed border-line bg-surface-soft/40 px-4 py-7 text-center">
+              <div
+                class="rounded-2xl border border-dashed border-line bg-surface-soft/40 px-4 py-7 text-center"
+              >
                 <app-icon name="settings" [size]="22" class="mx-auto text-faint" />
-                <p class="mt-2 text-xs font-semibold">Sin recambios</p>
-                <p class="mt-1 text-[11px] text-muted">Puedes guardar solo mano de obra, o añadir piezas si las hubo.</p>
+                <p class="mt-2 text-xs font-semibold">{{ 'serviceForm.noPartsTitle' | t }}</p>
+                <p class="mt-1 text-[11px] text-muted">{{ 'serviceForm.noPartsHint' | t }}</p>
               </div>
             }
           </div>
@@ -235,27 +285,29 @@
 
         <section class="card p-5 sm:p-6">
           <div class="mb-5 flex items-center gap-3">
-            <span class="grid size-9 place-items-center rounded-xl bg-accent/30 text-accent-ink dark:text-accent">
+            <span
+              class="grid size-9 place-items-center rounded-xl bg-accent/30 text-accent-ink dark:text-accent"
+            >
               <app-icon name="euro" [size]="17" />
             </span>
             <div>
-              <h2 class="section-title">Coste y notas</h2>
-              <p class="text-[11px] text-muted">Mano de obra y detalles que quieras recordar.</p>
+              <h2 class="section-title">{{ 'serviceForm.costTitle' | t }}</h2>
+              <p class="text-[11px] text-muted">{{ 'serviceForm.costHint' | t }}</p>
             </div>
           </div>
 
           <div class="space-y-4">
             <div>
-              <span class="label">¿Quién lo ha hecho?</span>
+              <span class="label">{{ 'serviceForm.performedByLabel' | t }}</span>
               <div class="grid grid-cols-2 gap-2">
-                @for (option of [{ value: 'DIY', label: 'Por mi cuenta', hint: 'Bricolaje o DIY' }, { value: 'WORKSHOP', label: 'Taller', hint: 'Profesional' }]; track option.value) {
+                @for (option of performedByOptions(); track option.value) {
                   <button
                     type="button"
                     class="rounded-xl border px-3 py-3 text-left transition"
                     [class.border-brand]="form.controls.performedBy.value === option.value"
                     [class.bg-brand-soft]="form.controls.performedBy.value === option.value"
                     [class.border-line]="form.controls.performedBy.value !== option.value"
-                    (click)="setPerformedBy(option.value === 'DIY' ? 'DIY' : 'WORKSHOP')"
+                    (click)="setPerformedBy(option.value)"
                   >
                     <span class="flex items-center gap-2 text-xs font-bold">
                       <app-icon [name]="option.value === 'DIY' ? 'user' : 'wrench'" [size]="14" />
@@ -268,7 +320,7 @@
             </div>
 
             <div class="max-w-xs">
-              <label class="label" for="laborCost">Mano de obra</label>
+              <label class="label" for="laborCost">{{ 'serviceForm.laborLabel' | t }}</label>
               <div class="field-shell">
                 <span class="field-icon"><app-icon name="euro" [size]="17" /></span>
                 <input
@@ -284,47 +336,56 @@
             </div>
 
             <div>
-              <label class="label" for="notes">Notas</label>
+              <label class="label" for="notes">{{ 'serviceForm.notesLabel' | t }}</label>
               <textarea
                 id="notes"
                 rows="3"
                 class="field min-h-24 resize-y"
                 formControlName="notes"
-                placeholder="Qué se ha revisado, incidencias, próxima revisión…"
+                [attr.placeholder]="'serviceForm.notesPlaceholder' | t"
               ></textarea>
             </div>
 
             <div>
-              <label class="label" for="invoice">Referencia de factura <span class="font-normal text-faint">(opcional)</span></label>
+              <label class="label" for="invoice">{{
+                'serviceForm.invoiceLabel' | t: { optional: ('common.optional' | t) }
+              }}</label>
               <input
                 id="invoice"
                 class="field"
                 formControlName="invoiceFilePath"
-                placeholder="Nº de factura, enlace o archivo en tu nube"
+                [attr.placeholder]="'serviceForm.invoicePlaceholder' | t"
               />
             </div>
           </div>
         </section>
       </div>
 
-      <aside class="space-y-4 lg:sticky lg:top-24">
+      <aside class="min-w-0 space-y-4 lg:sticky lg:top-24">
         <div class="overflow-hidden rounded-[26px] bg-brand p-5 text-white shadow-float">
-          <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-white/45">Coste total</p>
-          <p class="metric-value mt-2 text-[2.4rem] leading-none text-white">{{ money(total()) }}</p>
-          <p class="mt-2 text-[11px] text-white/45">Mano de obra + recambios</p>
+          <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-white/45">
+            {{ 'serviceForm.totalTitle' | t }}
+          </p>
+          <p class="metric-value mt-2 text-[2.4rem] leading-none text-white">
+            {{ money(total()) }}
+          </p>
+          <p class="mt-2 text-[11px] text-white/45">{{ 'serviceForm.laborPlusParts' | t }}</p>
 
           <div class="my-5 space-y-2 border-y border-white/10 py-4 text-xs">
             <div class="flex items-center justify-between">
-              <span class="text-white/50">Mano de obra</span>
+              <span class="text-white/50">{{ 'serviceForm.labor' | t }}</span>
               <span class="font-semibold">{{ money(laborCost()) }}</span>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-white/50">Recambios</span>
+              <span class="text-white/50">{{ 'serviceForm.parts' | t }}</span>
               <span class="font-semibold">{{ money(partsCost()) }}</span>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-white/50">Piezas</span>
-              <span class="font-semibold">{{ partGroups().length }} pieza{{ partGroups().length === 1 ? '' : 's' }}</span>
+              <span class="text-white/50">{{ 'serviceForm.piecesLabel' | t }}</span>
+              <span class="font-semibold">{{
+                (partGroups().length === 1 ? 'serviceForm.pieces.one' : 'serviceForm.pieces.other')
+                  | t: { count: partGroups().length }
+              }}</span>
             </div>
           </div>
 
@@ -332,22 +393,28 @@
             <div class="rounded-xl bg-white/5 p-3">
               <p class="flex items-center gap-1.5 text-[11px] font-semibold text-accent">
                 <app-icon name="check-circle" [size]="13" />
-                Plan actualizado
+                {{ 'serviceForm.planUpdated' | t }}
               </p>
-              <p class="mt-1 text-[10px] leading-relaxed text-white/45">Al guardar, {{ rule.name }} renovará su próximo vencimiento.</p>
+              <p class="mt-1 text-[10px] leading-relaxed text-white/45">
+                {{ 'serviceForm.planRenew' | t: { rule: ruleName(rule.name) } }}
+              </p>
             </div>
           }
 
           <button class="btn btn-accent mt-5 w-full" type="submit" [disabled]="saving()">
             @if (saving()) {
               <app-icon name="refresh" [size]="17" class="spin-slow" />
-              Guardando…
+              {{ 'serviceForm.saving' | t }}
             } @else {
               <app-icon name="check" [size]="17" />
-              Guardar intervención
+              {{ 'serviceForm.save' | t }}
             }
           </button>
-          <a routerLink="/app/services" class="btn btn-sm mt-2 w-full text-white/60 hover:bg-white/5 hover:text-white">Cancelar</a>
+          <a
+            routerLink="/app/services"
+            class="btn btn-sm mt-2 w-full text-white/60 hover:bg-white/5 hover:text-white"
+            >{{ 'serviceForm.cancel' | t }}</a
+          >
         </div>
 
         <div class="card p-5">
@@ -356,9 +423,9 @@
               <app-icon name="file-text" [size]="16" />
             </span>
             <div>
-              <p class="text-xs font-bold">Tu libro de mantenimiento</p>
+              <p class="text-xs font-bold">{{ 'serviceForm.bookTitle' | t }}</p>
               <p class="mt-1 text-[11px] leading-relaxed text-muted">
-                Todo lo que guardes alimenta el dossier PDF del coche. Útil para venderlo o demostrar el cuidado.
+                {{ 'serviceForm.bookDescription' | t }}
               </p>
             </div>
           </div>
@@ -366,7 +433,7 @@
 
         <p class="flex items-center justify-center gap-1.5 text-[10px] font-medium text-faint">
           <app-icon name="cloud-off" [size]="12" />
-          Sin conexión también se guarda.
+          {{ 'serviceForm.offlineHint' | t }}
         </p>
       </aside>
     </form>

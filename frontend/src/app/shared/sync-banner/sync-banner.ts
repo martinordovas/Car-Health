@@ -3,10 +3,11 @@ import { RouterLink } from '@angular/router';
 import { ConnectivityService } from '../../core/connectivity.service';
 import { OfflineQueueService } from '../../core/offline-queue.service';
 import { IconComponent } from '../icon/icon';
+import { TranslatePipe } from '../i18n/translate.pipe';
 
 @Component({
   selector: 'app-sync-banner',
-  imports: [RouterLink, IconComponent],
+  imports: [RouterLink, IconComponent, TranslatePipe],
   template: `
     @if (connectivity.degraded()) {
       <div class="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-info/20 bg-info-soft px-4 py-3 text-info">
@@ -14,12 +15,17 @@ import { IconComponent } from '../icon/icon';
           <app-icon name="cloud-off" [size]="16" />
         </span>
         <div class="min-w-0 flex-1">
-          <p class="text-xs font-bold">No llegamos al servidor</p>
-          <p class="text-[11px] opacity-80">Estás viendo la última copia guardada en este dispositivo.</p>
+          <p class="text-xs font-bold">{{ 'sync.serverTitle' | t }}</p>
+          <p class="text-[11px] opacity-80">{{ 'sync.serverDescription' | t }}</p>
         </div>
-        <button type="button" class="btn btn-sm bg-info/10 text-info" (click)="queue.flush()" [disabled]="queue.syncing()">
+        <button
+          type="button"
+          class="btn btn-sm bg-info/10 text-info"
+          (click)="queue.flush()"
+          [disabled]="queue.syncing()"
+        >
           <app-icon name="refresh" [size]="14" [class.spin-slow]="queue.syncing()" />
-          Reintentar
+          {{ 'sync.retry' | t }}
         </button>
       </div>
     } @else if (!connectivity.online()) {
@@ -28,25 +34,30 @@ import { IconComponent } from '../icon/icon';
           <app-icon name="cloud-off" [size]="16" />
         </span>
         <div class="min-w-0 flex-1">
-          <p class="text-xs font-bold">Estás sin conexión</p>
+          <p class="text-xs font-bold">{{ 'sync.offlineTitle' | t }}</p>
           <p class="text-[11px] opacity-80">
-            Puedes consultar tus datos guardados y apuntar repostajes.
+            {{ 'sync.offlineDescription' | t }}
             @if (queue.pendingCount() > 0) {
-              {{ queue.pendingCount() }} {{ queue.pendingCount() === 1 ? 'cambio se enviará' : 'cambios se enviarán' }} al volver.
+              {{
+                (queue.pendingCount() === 1
+                  ? 'sync.pendingSentence.one'
+                  : 'sync.pendingSentence.other'
+                ) | t: { count: queue.pendingCount() }
+              }}
             }
           </p>
         </div>
         @if (queue.pendingCount() > 0) {
           <span class="chip bg-warning/10 text-warning">
             <app-icon name="clock" [size]="12" />
-            {{ queue.pendingCount() }} pendientes
+            {{ 'sync.pendingChip' | t: { count: queue.pendingCount() } }}
           </span>
         }
       </div>
     } @else if (queue.syncing()) {
       <div class="mb-5 flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-2.5 text-muted">
         <app-icon name="sync" [size]="16" class="spin-slow text-brand dark:text-accent" />
-        <p class="text-xs font-semibold">Sincronizando tus cambios pendientes…</p>
+        <p class="text-xs font-semibold">{{ 'sync.syncing' | t }}</p>
       </div>
     } @else if (queue.pendingCount() > 0) {
       <div class="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3">
@@ -54,10 +65,17 @@ import { IconComponent } from '../icon/icon';
           <app-icon name="sync" [size]="16" />
         </span>
         <div class="min-w-0 flex-1">
-          <p class="text-xs font-bold">Tienes cambios esperando</p>
-          <p class="text-[11px] text-muted">Se enviarán automáticamente al recuperar la conexión.</p>
+          <p class="text-xs font-bold">{{ 'sync.waitingTitle' | t }}</p>
+          <p class="text-[11px] text-muted">{{ 'sync.waitingDescription' | t }}</p>
         </div>
-        <button type="button" class="btn btn-sm btn-surface" (click)="queue.flush()" [disabled]="queue.syncing()">Sincronizar ahora</button>
+        <button
+          type="button"
+          class="btn btn-sm btn-surface"
+          (click)="queue.flush()"
+          [disabled]="queue.syncing()"
+        >
+          {{ 'sync.syncNow' | t }}
+        </button>
       </div>
     } @else if (queue.failedCount() > 0) {
       <div class="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-danger/20 bg-danger-soft px-4 py-3 text-danger">
@@ -65,10 +83,17 @@ import { IconComponent } from '../icon/icon';
           <app-icon name="alert-triangle" [size]="16" />
         </span>
         <div class="min-w-0 flex-1">
-          <p class="text-xs font-bold">{{ queue.failedCount() }} {{ queue.failedCount() === 1 ? 'cambio no se pudo sincronizar' : 'cambios no se pudieron sincronizar' }}</p>
-          <p class="text-[11px] opacity-80">Revisa los pendientes en tu garaje para reintentarlos o descartarlos.</p>
+          <p class="text-xs font-bold">
+            {{
+              (queue.failedCount() === 1 ? 'sync.failedTitle.one' : 'sync.failedTitle.other')
+                | t: { count: queue.failedCount() }
+            }}
+          </p>
+          <p class="text-[11px] opacity-80">{{ 'sync.failedDescription' | t }}</p>
         </div>
-        <a routerLink="/app/garage" class="btn btn-sm bg-danger/10 text-danger">Revisar</a>
+        <a routerLink="/app/garage" class="btn btn-sm bg-danger/10 text-danger">{{
+          'sync.review' | t
+        }}</a>
       </div>
     }
   `,

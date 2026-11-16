@@ -10,6 +10,7 @@ describe('PlaceSearchService', () => {
   let http: HttpTestingController;
 
   beforeEach(() => {
+    localStorage.setItem('ch-locale', 'es');
     TestBed.configureTestingModule({
       providers: [PlaceSearchService, provideHttpClient(), provideHttpClientTesting()],
     });

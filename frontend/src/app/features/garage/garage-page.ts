@@ -5,6 +5,7 @@ import { finalize } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { ConnectivityService } from '../../core/connectivity.service';
 import { DossierService } from '../../core/dossier.service';
+import { I18nService } from '../../core/i18n.service';
 import {
   dateMedium,
   dateTime,
@@ -21,13 +22,23 @@ import { ThemeService } from '../../core/theme.service';
 import { ToastService } from '../../core/toast.service';
 import { VehicleStore } from '../../core/vehicle-store.service';
 import { IconComponent } from '../../shared/icon/icon';
+import { LanguageToggleComponent } from '../../shared/i18n/language-toggle';
+import { TranslatePipe } from '../../shared/i18n/translate.pipe';
 import { ModalComponent } from '../../shared/modal/modal';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { VehicleVisualComponent } from '../../shared/vehicle-visual/vehicle-visual';
 
 @Component({
   selector: 'app-garage-page',
-  imports: [ReactiveFormsModule, IconComponent, PageHeaderComponent, ModalComponent, VehicleVisualComponent],
+  imports: [
+    ReactiveFormsModule,
+    IconComponent,
+    LanguageToggleComponent,
+    PageHeaderComponent,
+    ModalComponent,
+    TranslatePipe,
+    VehicleVisualComponent,
+  ],
   templateUrl: './garage-page.html',
 })
 export class GaragePageComponent {
@@ -35,6 +46,7 @@ export class GaragePageComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly dossier = inject(DossierService);
+  private readonly i18n = inject(I18nService);
   private readonly toast = inject(ToastService);
   readonly store = inject(VehicleStore);
   readonly session = inject(SessionService);
@@ -55,16 +67,19 @@ export class GaragePageComponent {
   readonly photoProcessing = signal(false);
   readonly photoError = signal<string | null>(null);
 
-  readonly fuelTypes: { value: FuelType; label: string }[] = [
-    { value: 'GASOLINE_95', label: 'Gasolina 95' },
-    { value: 'GASOLINE_98', label: 'Gasolina 98' },
-    { value: 'DIESEL', label: 'Diésel' },
-    { value: 'HYBRID', label: 'Híbrido' },
-    { value: 'PLUG_IN_HYBRID', label: 'Híbrido enchufable' },
-    { value: 'ELECTRIC', label: 'Eléctrico' },
-    { value: 'LPG', label: 'GLP' },
-    { value: 'OTHER', label: 'Otro' },
-  ];
+  readonly fuelTypes = computed<{ value: FuelType; label: string }[]>(() => {
+    this.i18n.locale();
+    return [
+      { value: 'GASOLINE_95', label: this.i18n.t('labels.fuelType.GASOLINE_95') },
+      { value: 'GASOLINE_98', label: this.i18n.t('labels.fuelType.GASOLINE_98') },
+      { value: 'DIESEL', label: this.i18n.t('labels.fuelType.DIESEL') },
+      { value: 'HYBRID', label: this.i18n.t('labels.fuelType.HYBRID') },
+      { value: 'PLUG_IN_HYBRID', label: this.i18n.t('labels.fuelType.PLUG_IN_HYBRID') },
+      { value: 'ELECTRIC', label: this.i18n.t('labels.fuelType.ELECTRIC') },
+      { value: 'LPG', label: this.i18n.t('labels.fuelType.LPG') },
+      { value: 'OTHER', label: this.i18n.t('labels.fuelType.OTHER') },
+    ];
+  });
 
   protected readonly initials = initials;
   protected readonly km = km;
@@ -151,7 +166,7 @@ export class GaragePageComponent {
   saveVehicle(): void {
     if (this.saving()) return;
     if (!this.connectivity.online()) {
-      this.formError.set('Necesitas conexión para crear o editar un vehículo. El resto de registros sí funcionan offline.');
+      this.formError.set(this.i18n.t('garage.errorOfflineVehicle'));
       return;
     }
     if (this.form.invalid) {
@@ -181,7 +196,11 @@ export class GaragePageComponent {
     request.pipe(finalize(() => this.saving.set(false))).subscribe({
       next: (vehicle) => {
         this.modalOpen.set(false);
-        this.toast.success(editing ? 'Coche actualizado.' : `${vehicle.name} ya está en tu garaje.`);
+        this.toast.success(
+          editing
+            ? this.i18n.t('garage.toastUpdated')
+            : this.i18n.t('garage.toastCreated', { vehicle: vehicle.name }),
+        );
       },
       error: (error: unknown) => {
         this.formError.set(errorMessage(error));
@@ -197,11 +216,11 @@ export class GaragePageComponent {
 
     this.photoError.set(null);
     if (!file.type.startsWith('image/')) {
-      this.photoError.set('Selecciona un archivo de imagen (JPEG, PNG, WebP o AVIF).');
+      this.photoError.set(this.i18n.t('garage.errorPhotoType'));
       return;
     }
     if (file.size > 12 * 1024 * 1024) {
-      this.photoError.set('La imagen original no puede superar los 12 MB.');
+      this.photoError.set(this.i18n.t('garage.errorPhotoSize'));
       return;
     }
 
@@ -211,7 +230,7 @@ export class GaragePageComponent {
       this.form.controls.photoData.setValue(photo);
     } catch (error) {
       this.photoError.set(
-        error instanceof Error ? error.message : 'No hemos podido procesar la foto.',
+        error instanceof Error ? error.message : this.i18n.t('garage.errorPhotoProcess'),
       );
     } finally {
       this.photoProcessing.set(false);
@@ -235,7 +254,7 @@ export class GaragePageComponent {
 
     const context = canvas.getContext('2d');
     if (!context) {
-      throw new Error('Tu navegador no permite optimizar la imagen.');
+      throw new Error(this.i18n.t('garage.errorPhotoBrowser'));
     }
     context.fillStyle = '#ffffff';
     context.fillRect(0, 0, canvas.width, canvas.height);
@@ -249,7 +268,7 @@ export class GaragePageComponent {
       result = canvas.toDataURL('image/jpeg', quality);
     }
     if (result.length > 1_000_000) {
-      throw new Error('La foto sigue siendo demasiado grande. Prueba con una imagen más pequeña.');
+      throw new Error(this.i18n.t('garage.errorPhotoBig'));
     }
     return result;
   }
@@ -258,7 +277,7 @@ export class GaragePageComponent {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(String(reader.result));
-      reader.onerror = () => reject(new Error('No hemos podido leer la foto.'));
+      reader.onerror = () => reject(new Error(this.i18n.t('garage.errorPhotoRead')));
       reader.readAsDataURL(file);
     });
   }
@@ -267,15 +286,16 @@ export class GaragePageComponent {
     return new Promise((resolve, reject) => {
       const image = new Image();
       image.onload = () => resolve(image);
-      image.onerror = () => reject(new Error('La foto no es una imagen válida.'));
+      image.onerror = () => reject(new Error(this.i18n.t('garage.errorPhotoInvalid')));
       image.src = source;
     });
   }
 
   deleteVehicle(): void {
     const vehicle = this.editing();
-    if (!vehicle) return;    const confirmed = window.confirm(
-      `¿Eliminar ${vehicle.name}? Se borrarán también todos sus repostajes y mantenimientos. Esta acción no se puede deshacer.`,
+    if (!vehicle) return;
+    const confirmed = window.confirm(
+      this.i18n.t('garage.confirmDelete', { vehicle: vehicle.name }),
     );
     if (!confirmed) return;
     this.saving.set(true);
@@ -285,7 +305,7 @@ export class GaragePageComponent {
       .subscribe({
         next: () => {
           this.modalOpen.set(false);
-          this.toast.success('Vehículo eliminado.');
+          this.toast.success(this.i18n.t('garage.toastDeleted'));
           if (!this.store.hasVehicles()) {
             void this.router.navigate(['/app/garage']);
           }
@@ -297,10 +317,12 @@ export class GaragePageComponent {
   fieldError(name: string): string | null {
     const control = this.form.get(name);
     if (!control || !(control.touched || control.dirty) || !control.invalid) return null;
-    if (control.errors?.['required']) return 'Obligatorio.';
-    if (control.errors?.['min'] || control.errors?.['max']) return 'Valor fuera de rango.';
-    if (control.errors?.['maxlength']) return 'Demasiado largo.';
-    return 'Revisa este campo.';
+    if (control.errors?.['required']) return this.i18n.t('garage.errorFieldRequired');
+    if (control.errors?.['min'] || control.errors?.['max']) {
+      return this.i18n.t('garage.errorFieldRange');
+    }
+    if (control.errors?.['maxlength']) return this.i18n.t('garage.errorFieldLong');
+    return this.i18n.t('garage.errorFieldReview');
   }
 
   updateProfileName(event: Event): void {
@@ -310,7 +332,7 @@ export class GaragePageComponent {
   saveProfile(): void {
     const name = this.profileName().trim();
     if (name.length < 1) {
-      this.toast.error('El nombre no puede estar vacío.');
+      this.toast.error(this.i18n.t('garage.errorNameEmpty'));
       return;
     }
     this.profileSaving.set(true);
@@ -318,7 +340,7 @@ export class GaragePageComponent {
       .updateProfile(name)
       .pipe(finalize(() => this.profileSaving.set(false)))
       .subscribe({
-        next: () => this.toast.success('Perfil actualizado.'),
+        next: () => this.toast.success(this.i18n.t('garage.toastProfile')),
         error: (error: unknown) => this.toast.error(errorMessage(error)),
       });
   }
@@ -330,7 +352,7 @@ export class GaragePageComponent {
     }
     const value = this.passwordForm.getRawValue();
     if (value.newPassword !== value.confirmPassword) {
-      this.passwordError.set('Las contraseñas nuevas no coinciden.');
+      this.passwordError.set(this.i18n.t('garage.errorPasswords'));
       return;
     }
     this.passwordSaving.set(true);
@@ -342,7 +364,7 @@ export class GaragePageComponent {
         next: () => {
           this.passwordOpen.set(false);
           this.passwordForm.reset({ currentPassword: '', newPassword: '', confirmPassword: '' });
-          this.toast.success('Contraseña actualizada.');
+          this.toast.success(this.i18n.t('garage.toastPassword'));
         },
         error: (error: unknown) => this.passwordError.set(errorMessage(error)),
       });
@@ -350,7 +372,7 @@ export class GaragePageComponent {
 
   downloadDossier(vehicle: Vehicle): void {
     if (!this.connectivity.online()) {
-      this.toast.error('Necesitas conexión para descargar el dossier PDF.');
+      this.toast.error(this.i18n.t('garage.errorDossierOffline'));
       return;
     }
     this.downloading.set(vehicle.id);
@@ -375,15 +397,15 @@ export class GaragePageComponent {
   }
 
   discardQueueItem(item: QueuedMutation): void {
-    const confirmed = window.confirm('¿Descartar este cambio pendiente? No se enviará al servidor.');
+    const confirmed = window.confirm(this.i18n.t('garage.confirmDiscard'));
     if (!confirmed) return;
     void this.queue.discard(item.id);
-    this.toast.info('Cambio descartado.');
+    this.toast.info(this.i18n.t('garage.toastDiscarded'));
   }
 
   logout(): void {
     if (this.queue.pendingCount() > 0) {
-      const confirmed = window.confirm('Tienes cambios pendientes. Se guardarán en este dispositivo y se sincronizarán al volver a entrar. ¿Cerrar sesión?');
+      const confirmed = window.confirm(this.i18n.t('garage.confirmLogout'));
       if (!confirmed) return;
     }
     this.auth.logout();

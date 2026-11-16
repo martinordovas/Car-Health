@@ -14,62 +14,74 @@
     <span class="mx-auto grid size-14 place-items-center rounded-2xl bg-danger-soft text-danger">
       <app-icon name="cloud-off" [size]="26" />
     </span>
-    <h1 class="mt-5 text-xl font-bold">No podemos cargar tu garaje</h1>
+    <h1 class="mt-5 text-xl font-bold">{{ 'dashboard.loadGarageError' | t }}</h1>
     <p class="mt-2 text-sm text-muted">{{ store.error() }}</p>
     <button class="btn btn-primary mt-5" type="button" (click)="store.refresh()">
       <app-icon name="refresh" [size]="17" />
-      Volver a intentar
+      {{ 'dashboard.retry' | t }}
     </button>
   </div>
 } @else if (!store.selected()) {
   <div class="page-enter mx-auto max-w-4xl">
     <div class="mb-8">
-      <p class="eyebrow mb-2">Empieza aquí</p>
-      <h1 class="text-3xl font-bold tracking-[-0.045em] sm:text-4xl">Tu garaje está esperando.</h1>
-      <p class="mt-2 max-w-lg text-sm text-muted">
-        Añade tu coche y empieza a entender de verdad cuánto consume, cuánto cuesta y qué toca mantener.
-      </p>
+      <p class="eyebrow mb-2">{{ 'dashboard.emptyEyebrow' | t }}</p>
+      <h1 class="text-3xl font-bold tracking-[-0.045em] sm:text-4xl">
+        {{ 'dashboard.emptyTitle' | t }}
+      </h1>
+      <p class="mt-2 max-w-lg text-sm text-muted">{{ 'dashboard.emptyDescription' | t }}</p>
     </div>
 
     <div class="card overflow-hidden">
       <div class="bg-[#0b2a1c] px-5 pt-8 sm:px-8">
         <div class="mx-auto max-w-lg">
-          <app-vehicle-visual label="Listo para arrancar" />
+          <app-vehicle-visual [label]="'dashboard.readyToDrive' | t" />
         </div>
       </div>
       <div class="p-6 sm:p-8">
         <div class="grid gap-5 sm:grid-cols-3">
           <div class="flex gap-3">
-            <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand dark:text-accent">
+            <span
+              class="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand dark:text-accent"
+            >
               <app-icon name="gauge" [size]="17" />
             </span>
             <div>
-              <p class="text-sm font-bold">Consumo real</p>
-              <p class="mt-1 text-xs leading-relaxed text-muted">Full-to-full, sin estimaciones.</p>
+              <p class="text-sm font-bold">{{ 'dashboard.featureRealConsumption' | t }}</p>
+              <p class="mt-1 text-xs leading-relaxed text-muted">
+                {{ 'dashboard.featureRealConsumptionDescription' | t }}
+              </p>
             </div>
           </div>
           <div class="flex gap-3">
-            <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand dark:text-accent">
+            <span
+              class="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand dark:text-accent"
+            >
               <app-icon name="trend-down" [size]="17" />
             </span>
             <div>
-              <p class="text-sm font-bold">Ahorro visible</p>
-              <p class="mt-1 text-xs leading-relaxed text-muted">Compara cada gasolinera contigo mismo.</p>
+              <p class="text-sm font-bold">{{ 'dashboard.featureSavings' | t }}</p>
+              <p class="mt-1 text-xs leading-relaxed text-muted">
+                {{ 'dashboard.featureSavingsDescription' | t }}
+              </p>
             </div>
           </div>
           <div class="flex gap-3">
-            <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand dark:text-accent">
+            <span
+              class="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand dark:text-accent"
+            >
               <app-icon name="cloud-off" [size]="17" />
             </span>
             <div>
-              <p class="text-sm font-bold">Offline first</p>
-              <p class="mt-1 text-xs leading-relaxed text-muted">Apunta desde cualquier sitio.</p>
+              <p class="text-sm font-bold">{{ 'dashboard.featureOffline' | t }}</p>
+              <p class="mt-1 text-xs leading-relaxed text-muted">
+                {{ 'dashboard.featureOfflineDescription' | t }}
+              </p>
             </div>
           </div>
         </div>
         <a routerLink="/app/garage" class="btn btn-primary btn-lg mt-7 w-full sm:w-auto">
           <app-icon name="plus" [size]="18" />
-          Añadir mi primer coche
+          {{ 'dashboard.addFirstCar' | t }}
         </a>
       </div>
     </div>
@@ -79,31 +91,34 @@
     <span class="mx-auto grid size-14 place-items-center rounded-2xl bg-warning-soft text-warning">
       <app-icon name="alert-triangle" [size]="26" />
     </span>
-    <h1 class="mt-5 text-xl font-bold">No hemos podido cargar el resumen</h1>
+    <h1 class="mt-5 text-xl font-bold">{{ 'dashboard.loadSummaryError' | t }}</h1>
     <p class="mt-2 text-sm text-muted">{{ error() }}</p>
     <button class="btn btn-primary mt-5" type="button" (click)="retry()">
       <app-icon name="refresh" [size]="17" />
-      Reintentar
+      {{ 'common.retry' | t }}
     </button>
   </div>
 } @else if (dashboard(); as data) {
   <div class="page-enter space-y-5 sm:space-y-6">
     <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <p class="eyebrow mb-2 first-letter:uppercase">{{ today }}</p>
+        <p class="eyebrow mb-2 first-letter:uppercase">{{ today() }}</p>
         <h1 class="text-[1.75rem] font-bold tracking-[-0.045em] sm:text-[2.25rem]">
-          {{ greeting() }}, {{ session.firstName() }}<span class="text-accent-strong dark:text-accent">.</span>
+          {{ greeting() }}, {{ session.firstName()
+          }}<span class="text-accent-strong dark:text-accent">.</span>
         </h1>
-        <p class="mt-1.5 text-sm text-muted">Así va {{ data.vehicle.name }} hoy.</p>
+        <p class="mt-1.5 text-sm text-muted">
+          {{ 'dashboard.vehicleToday' | t: { vehicle: data.vehicle.name } }}
+        </p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <a routerLink="/app/fuel/new" class="btn btn-primary btn-sm">
           <app-icon name="fuel" [size]="15" />
-          Repostar
+          {{ 'dashboard.fuelAction' | t }}
         </a>
         <a routerLink="/app/services/new" class="btn btn-surface btn-sm">
           <app-icon name="wrench" [size]="15" />
-          Mantenimiento
+          {{ 'dashboard.maintenanceAction' | t }}
         </a>
       </div>
     </div>
@@ -112,79 +127,104 @@
       <div class="relative z-10 grid items-center gap-4 lg:grid-cols-[1.1fr_0.9fr]">
         <div>
           <div class="flex flex-wrap items-center gap-2">
-            <p class="text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">Tu coche</p>
+            <p class="text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
+              {{ 'dashboard.yourCar' | t }}
+            </p>
             @if (data.vehicle.licensePlate) {
-              <span class="rounded-md border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-bold tracking-[0.12em] text-white/80">
+              <span
+                class="rounded-md border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-bold tracking-[0.12em] text-white/80"
+              >
                 {{ data.vehicle.licensePlate }}
               </span>
             }
           </div>
-          <h2 class="mt-2 text-[2.1rem] font-bold leading-[0.98] tracking-[-0.05em] text-white sm:text-[2.7rem]">
+          <h2
+            class="mt-2 text-[2.1rem] font-bold leading-[0.98] tracking-[-0.05em] text-white sm:text-[2.7rem]"
+          >
             {{ data.vehicle.name }}
           </h2>
           <p class="mt-2 text-xs font-medium text-white/50">
-            {{ data.vehicle.brand }} {{ data.vehicle.model }} · {{ data.vehicle.year }} · {{ fuelName(data.vehicle.fuelType) }}
+            {{ data.vehicle.brand }} {{ data.vehicle.model }} · {{ data.vehicle.year }} ·
+            {{ fuelName(data.vehicle.fuelType) }}
           </p>
 
           <div class="mt-7 grid grid-cols-3 gap-3 sm:gap-5">
             <div>
-              <p class="text-[9px] font-bold uppercase tracking-[0.12em] text-white/35">Odómetro</p>
-              <p class="metric-value mt-1 text-lg text-white sm:text-2xl">{{ km(data.vehicle.currentOdometer) }}</p>
+              <p class="text-[9px] font-bold uppercase tracking-[0.12em] text-white/35">
+                {{ 'dashboard.odometer' | t }}
+              </p>
+              <p class="metric-value mt-1 text-lg text-white sm:text-2xl">
+                {{ km(data.vehicle.currentOdometer) }}
+              </p>
             </div>
             <div>
-              <p class="text-[9px] font-bold uppercase tracking-[0.12em] text-white/35">Consumo</p>
-              <p class="metric-value mt-1 text-lg text-white sm:text-2xl">{{ consumption(data.kpis.avgConsumption) }}</p>
+              <p class="text-[9px] font-bold uppercase tracking-[0.12em] text-white/35">
+                {{ 'dashboard.consumption' | t }}
+              </p>
+              <p class="metric-value mt-1 text-lg text-white sm:text-2xl">
+                {{ consumption(data.kpis.avgConsumption) }}
+              </p>
             </div>
             <div>
-              <p class="text-[9px] font-bold uppercase tracking-[0.12em] text-white/35">Este mes</p>
-              <p class="metric-value mt-1 text-lg text-accent sm:text-2xl">{{ money(data.kpis.spentThisMonth) }}</p>
+              <p class="text-[9px] font-bold uppercase tracking-[0.12em] text-white/35">
+                {{ 'dashboard.thisMonth' | t }}
+              </p>
+              <p class="metric-value mt-1 text-lg text-accent sm:text-2xl">
+                {{ money(data.kpis.spentThisMonth) }}
+              </p>
             </div>
           </div>
 
           <div class="mt-6 flex flex-wrap gap-2">
             <a routerLink="/app/fuel/new" class="btn btn-accent btn-sm">
               <app-icon name="plus" [size]="15" />
-              Apuntar repostaje
+              {{ 'dashboard.addFuel' | t }}
             </a>
-            <a routerLink="/app/stats" class="btn btn-sm border border-white/20 bg-white/5 text-white hover:bg-white/10">
-              Ver analítica
+            <a
+              routerLink="/app/stats"
+              class="btn btn-sm border border-white/20 bg-white/5 text-white hover:bg-white/10"
+            >
+              {{ 'dashboard.viewAnalytics' | t }}
               <app-icon name="arrow-right" [size]="15" />
             </a>
           </div>
         </div>
 
         <div class="-mx-5 -mb-5 mt-2 sm:mx-0 sm:mb-0 sm:mt-3 lg:mt-0">
-          <app-vehicle-visual [label]="km(data.vehicle.currentOdometer)" [photo]="data.vehicle.photoData" />
+          <app-vehicle-visual
+            [label]="km(data.vehicle.currentOdometer)"
+            [photo]="data.vehicle.photoData"
+          />
         </div>
       </div>
     </section>
 
     <div class="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
       <app-stat-card
-        label="Gasto este mes"
+        [label]="'dashboard.statSpentMonth' | t"
         [value]="money(data.kpis.spentThisMonth)"
-        hint="Combustible + taller"
+        [hint]="'dashboard.statSpentMonthHint' | t"
         icon="euro"
         tone="brand"
       />
       <app-stat-card
-        label="Consumo medio"
+        [label]="'dashboard.statAvgConsumption' | t"
         [value]="consumption(data.kpis.avgConsumption)"
-        hint="Últimos depósitos completos"
+        [hint]="'dashboard.statAvgConsumptionHint' | t"
         icon="gauge"
         tone="accent"
       />
       <app-stat-card
-        label="Ahorro este año"
+        [label]="'dashboard.statSavingsYear' | t"
         [value]="money(data.kpis.savingsThisYear)"
-        hint="Frente a tu precio de referencia"
+        [hint]="'dashboard.statSavingsYearHint' | t"
         icon="trend-down"
         tone="success"
       />
       <app-stat-card
-        label="Coste por km"
+        [label]="'dashboard.statCostKm' | t"
         [value]="money(data.kpis.costPerKm)"
-        hint="Combustible y mantenimiento"
+        [hint]="'dashboard.statCostKmHint' | t"
         icon="route"
         tone="info"
       />
@@ -194,11 +234,11 @@
       <section class="card p-5 sm:p-6 lg:col-span-7">
         <div class="mb-5 flex items-start justify-between gap-4">
           <div>
-            <p class="eyebrow mb-1.5">Evolución</p>
-            <h2 class="section-title">Gasto de los últimos 12 meses</h2>
+            <p class="eyebrow mb-1.5">{{ 'dashboard.evolution' | t }}</p>
+            <h2 class="section-title">{{ 'dashboard.last12Months' | t }}</h2>
           </div>
           <a routerLink="/app/stats" class="btn btn-ghost btn-sm -me-2">
-            Ver todo
+            {{ 'dashboard.viewAll' | t }}
             <app-icon name="chevron-right" [size]="14" />
           </a>
         </div>
@@ -206,11 +246,15 @@
           <app-spend-chart [data]="statsData.monthly" />
           <div class="mt-5 grid grid-cols-2 gap-3 border-t border-line pt-4">
             <div>
-              <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">Combustible</p>
+              <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">
+                {{ 'dashboard.fuel' | t }}
+              </p>
               <p class="metric-value mt-1 text-lg">{{ money(statsData.totals.fuelSpent) }}</p>
             </div>
             <div>
-              <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">Mantenimiento</p>
+              <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">
+                {{ 'dashboard.maintenance' | t }}
+              </p>
               <p class="metric-value mt-1 text-lg">{{ money(statsData.totals.serviceSpent) }}</p>
             </div>
           </div>
@@ -222,11 +266,11 @@
       <section class="card p-5 sm:p-6 lg:col-span-5">
         <div class="mb-5 flex items-start justify-between gap-4">
           <div>
-            <p class="eyebrow mb-1.5">Prevención</p>
-            <h2 class="section-title">Lo que viene</h2>
+            <p class="eyebrow mb-1.5">{{ 'dashboard.prevention' | t }}</p>
+            <h2 class="section-title">{{ 'dashboard.whatNext' | t }}</h2>
           </div>
           <a routerLink="/app/services" class="btn btn-ghost btn-sm -me-2">
-            Plan
+            {{ 'dashboard.plan' | t }}
             <app-icon name="chevron-right" [size]="14" />
           </a>
         </div>
@@ -236,16 +280,35 @@
             @for (rule of nextMaintenance(); track rule.id; let last = $last) {
               <a [routerLink]="['/app/services']" class="block group">
                 <div class="flex items-start gap-3">
-                  <span class="mt-0.5 size-2 shrink-0 rounded-full" [class]="rule.status === 'OVERDUE' ? 'bg-danger' : rule.status === 'DUE_SOON' ? 'bg-warning' : 'bg-success'"></span>
+                  <span
+                    class="mt-0.5 size-2 shrink-0 rounded-full"
+                    [class]="
+                      rule.status === 'OVERDUE'
+                        ? 'bg-danger'
+                        : rule.status === 'DUE_SOON'
+                          ? 'bg-warning'
+                          : 'bg-success'
+                    "
+                  ></span>
                   <div class="min-w-0 flex-1">
                     <div class="flex items-center justify-between gap-2">
-                      <p class="truncate text-sm font-bold group-hover:underline">{{ rule.name }}</p>
-                      <span class="chip shrink-0" [class]="statusTone(rule.status)">{{ statusLabel(rule.status) }}</span>
+                      <p class="truncate text-sm font-bold group-hover:underline">
+                        {{ ruleName(rule.name) }}
+                      </p>
+                      <span class="chip shrink-0" [class]="statusTone(rule.status)">{{
+                        statusLabel(rule.status)
+                      }}</span>
                     </div>
                     <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-strong">
                       <div
                         class="h-full rounded-full transition-all"
-                        [class]="rule.status === 'OVERDUE' ? 'bg-danger' : rule.status === 'DUE_SOON' ? 'bg-warning' : 'bg-success'"
+                        [class]="
+                          rule.status === 'OVERDUE'
+                            ? 'bg-danger'
+                            : rule.status === 'DUE_SOON'
+                              ? 'bg-warning'
+                              : 'bg-success'
+                        "
                         [style.width.%]="progress(rule)"
                       ></div>
                     </div>
@@ -266,8 +329,8 @@
         } @else {
           <div class="rounded-2xl border border-dashed border-line bg-surface-soft p-5 text-center">
             <app-icon name="check-circle" [size]="24" class="mx-auto text-success" />
-            <p class="mt-2 text-sm font-semibold">Plan al día</p>
-            <p class="mt-1 text-xs text-muted">No hay vencimientos próximos.</p>
+            <p class="mt-2 text-sm font-semibold">{{ 'dashboard.planUpToDate' | t }}</p>
+            <p class="mt-1 text-xs text-muted">{{ 'dashboard.noUpcoming' | t }}</p>
           </div>
         }
       </section>
@@ -277,11 +340,11 @@
       <section class="card p-5 sm:p-6 lg:col-span-7">
         <div class="mb-4 flex items-start justify-between gap-4">
           <div>
-            <p class="eyebrow mb-1.5">Diario</p>
-            <h2 class="section-title">Últimos movimientos</h2>
+            <p class="eyebrow mb-1.5">{{ 'dashboard.daily' | t }}</p>
+            <h2 class="section-title">{{ 'dashboard.latestActivity' | t }}</h2>
           </div>
           <a routerLink="/app/fuel" class="btn btn-ghost btn-sm -me-2">
-            Historial
+            {{ 'dashboard.history' | t }}
             <app-icon name="chevron-right" [size]="14" />
           </a>
         </div>
@@ -294,17 +357,30 @@
               >
                 <span
                   class="grid size-9 shrink-0 place-items-center rounded-xl"
-                  [class]="item.type === 'FUEL' ? 'bg-accent/25 text-accent-ink dark:text-accent' : 'bg-brand-soft text-brand dark:text-accent'"
+                  [class]="
+                    item.type === 'FUEL'
+                      ? 'bg-accent/25 text-accent-ink dark:text-accent'
+                      : 'bg-brand-soft text-brand dark:text-accent'
+                  "
                 >
                   <app-icon [name]="activityIcon(item.type)" [size]="16" />
                 </span>
                 <div class="min-w-0 flex-1">
                   <p class="truncate text-sm font-semibold">{{ item.title }}</p>
-                  <p class="mt-0.5 truncate text-[11px] text-muted">{{ item.subtitle }} · {{ dateShort(item.date) }}</p>
+                  <p class="mt-0.5 truncate text-[11px] text-muted">
+                    {{ item.subtitle }} · {{ dateShort(item.date) }}
+                  </p>
                 </div>
                 <div class="shrink-0 text-right">
                   <p class="tabular text-sm font-bold">{{ money(item.amount) }}</p>
-                  <p class="mt-0.5 text-[10px] text-faint">{{ item.type === 'FUEL' ? 'Repostaje' : 'Taller' }}</p>
+                  <p class="mt-0.5 text-[10px] text-faint">
+                    {{
+                      (item.type === 'FUEL'
+                        ? 'dashboard.activityFuel'
+                        : 'dashboard.activityService'
+                      ) | t
+                    }}
+                  </p>
                 </div>
               </a>
               @if (!last) {
@@ -313,42 +389,61 @@
             }
           </div>
         } @else {
-          <p class="py-8 text-center text-sm text-muted">Todavía no hay movimientos. Empieza con un repostaje.</p>
+          <p class="py-8 text-center text-sm text-muted">{{ 'dashboard.noActivity' | t }}</p>
         }
       </section>
 
       <section class="card relative overflow-hidden p-5 sm:p-6 lg:col-span-5">
-        <div class="pointer-events-none absolute -right-12 -top-12 size-40 rounded-full bg-accent/10"></div>
+        <div
+          class="pointer-events-none absolute -right-12 -top-12 size-40 rounded-full bg-accent/10"
+        ></div>
         <div class="relative">
-          <p class="eyebrow mb-1.5">Smart savings</p>
-          <h2 class="section-title">Dónde repostas mejor</h2>
+          <p class="eyebrow mb-1.5">{{ 'dashboard.smartSavings' | t }}</p>
+          <h2 class="section-title">{{ 'dashboard.bestStation' | t }}</h2>
           @if (bestStation(); as station) {
             <div class="mt-5 flex items-center gap-3">
-              <span class="grid size-11 shrink-0 place-items-center rounded-2xl bg-brand text-accent">
+              <span
+                class="grid size-11 shrink-0 place-items-center rounded-2xl bg-brand text-accent"
+              >
                 <app-icon name="map-pin" [size]="20" />
               </span>
               <div class="min-w-0">
                 <p class="truncate text-sm font-bold">{{ station.name }}</p>
-                <p class="truncate text-[11px] text-muted">{{ station.fills }} repostajes{{ station.location ? ' · ' + station.location : '' }}</p>
+                <p class="truncate text-[11px] text-muted">
+                  {{
+                    (station.fills === 1
+                      ? 'dashboard.stationFills.one'
+                      : 'dashboard.stationFills.other'
+                    ) | t: { count: station.fills }
+                  }}{{ station.location ? ' · ' + station.location : '' }}
+                </p>
               </div>
             </div>
             <div class="mt-5 grid grid-cols-2 gap-3 rounded-2xl bg-surface-soft p-4">
               <div>
-                <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">Precio medio</p>
-                <p class="metric-value mt-1 text-lg">{{ decimal(station.avgPrice, 3) }} €</p>
+                <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">
+                  {{ 'dashboard.avgPrice' | t }}
+                </p>
+                <p class="metric-value mt-1 text-lg">{{ price(station.avgPrice) }}</p>
               </div>
               <div>
-                <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">Ahorro acumulado</p>
-                <p class="metric-value mt-1 text-lg text-success">{{ money(station.totalSavings) }}</p>
+                <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">
+                  {{ 'dashboard.accumulatedSavings' | t }}
+                </p>
+                <p class="metric-value mt-1 text-lg text-success">
+                  {{ money(station.totalSavings) }}
+                </p>
               </div>
             </div>
             <a routerLink="/app/stats" class="btn btn-surface mt-4 w-full">
-              Comparar gasolineras
+              {{ 'dashboard.compareStations' | t }}
               <app-icon name="arrow-right" [size]="15" />
             </a>
           } @else {
-            <p class="mt-4 text-sm text-muted">Cuando repostes en dos sitios distintos podremos decirte dónde te sale mejor.</p>
-            <a routerLink="/app/fuel/new" class="btn btn-accent mt-4 w-full">Apuntar mi primer repostaje</a>
+            <p class="mt-4 text-sm text-muted">{{ 'dashboard.emptyBestStation' | t }}</p>
+            <a routerLink="/app/fuel/new" class="btn btn-accent mt-4 w-full">{{
+              'dashboard.firstFuel' | t
+            }}</a>
           }
         </div>
       </section>

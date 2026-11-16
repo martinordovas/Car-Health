@@ -3,6 +3,7 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { I18nService } from './i18n.service';
 import { OfflineStoreService } from './offline-store.service';
 import { SessionService } from './session.service';
 import { ToastService } from './toast.service';
@@ -12,6 +13,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
   const store = inject(OfflineStoreService);
   const toast = inject(ToastService);
+  const i18n = inject(I18nService);
 
   const isApiRequest = req.url.startsWith(environment.apiUrl) || req.url.startsWith('/api/');
   const isPublicAuth =
@@ -35,7 +37,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         session.clear();
         void store.clearResponses();
         if (hadSession) {
-          toast.info('Tu sesión ha caducado. Vuelve a iniciar sesión.');
+          toast.info(i18n.t('errors.sessionExpired'));
           void router.navigate(['/login']);
         }
       }

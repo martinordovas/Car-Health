@@ -1,90 +1,125 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { localeTag, translate, translatePlural, type TranslationKey } from './i18n';
 import type { FuelType, MaintenanceStatus, PerformedBy, ServiceCategory } from './models';
 
-const euro = new Intl.NumberFormat('es-ES', {
-  style: 'currency',
-  currency: 'EUR',
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
+interface Formatters {
+  euro: Intl.NumberFormat;
+  euroZero: Intl.NumberFormat;
+  euroThree: Intl.NumberFormat;
+  oneDecimal: Intl.NumberFormat;
+  twoDecimals: Intl.NumberFormat;
+  threeDecimals: Intl.NumberFormat;
+  integer: Intl.NumberFormat;
+  compactEuro: Intl.NumberFormat;
+  shortDate: Intl.DateTimeFormat;
+  mediumDate: Intl.DateTimeFormat;
+  time: Intl.DateTimeFormat;
+  relative: Intl.RelativeTimeFormat;
+}
 
-const euroZero = new Intl.NumberFormat('es-ES', {
-  style: 'currency',
-  currency: 'EUR',
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 0,
-});
+let cachedLocale = '';
+let cachedFormatters: Formatters | null = null;
 
-const oneDecimal = new Intl.NumberFormat('es-ES', {
-  minimumFractionDigits: 1,
-  maximumFractionDigits: 1,
-});
+function formatters(): Formatters {
+  const tag = localeTag();
+  if (tag === cachedLocale && cachedFormatters) return cachedFormatters;
 
-const twoDecimals = new Intl.NumberFormat('es-ES', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-
-const threeDecimals = new Intl.NumberFormat('es-ES', {
-  minimumFractionDigits: 3,
-  maximumFractionDigits: 3,
-});
-
-const integer = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 0 });
-
-const shortDate = new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: 'short' });
-const mediumDate = new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
-const timeFormat = new Intl.DateTimeFormat('es-ES', { hour: '2-digit', minute: '2-digit' });
-const relativeFormat = new Intl.RelativeTimeFormat('es-ES', { numeric: 'auto' });
+  cachedLocale = tag;
+  cachedFormatters = {
+    euro: new Intl.NumberFormat(tag, {
+      style: 'currency',
+      currency: 'EUR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }),
+    euroZero: new Intl.NumberFormat(tag, {
+      style: 'currency',
+      currency: 'EUR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }),
+    euroThree: new Intl.NumberFormat(tag, {
+      style: 'currency',
+      currency: 'EUR',
+      minimumFractionDigits: 3,
+      maximumFractionDigits: 3,
+    }),
+    oneDecimal: new Intl.NumberFormat(tag, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }),
+    twoDecimals: new Intl.NumberFormat(tag, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }),
+    threeDecimals: new Intl.NumberFormat(tag, {
+      minimumFractionDigits: 3,
+      maximumFractionDigits: 3,
+    }),
+    integer: new Intl.NumberFormat(tag, { maximumFractionDigits: 0 }),
+    compactEuro: new Intl.NumberFormat(tag, {
+      style: 'currency',
+      currency: 'EUR',
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    }),
+    shortDate: new Intl.DateTimeFormat(tag, { day: '2-digit', month: 'short' }),
+    mediumDate: new Intl.DateTimeFormat(tag, {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }),
+    time: new Intl.DateTimeFormat(tag, { hour: '2-digit', minute: '2-digit' }),
+    relative: new Intl.RelativeTimeFormat(tag, { numeric: 'auto' }),
+  };
+  return cachedFormatters;
+}
 
 export function money(value: number | null | undefined, decimals = 2): string {
   if (value === null || value === undefined || Number.isNaN(value)) return '—';
-  return decimals === 0 ? euroZero.format(value) : euro.format(value);
+  const format = formatters();
+  return decimals === 0 ? format.euroZero.format(value) : format.euro.format(value);
 }
 
 export function moneyCompact(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return '—';
   if (Math.abs(value) >= 1000) {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'EUR',
-      notation: 'compact',
-      maximumFractionDigits: 1,
-    }).format(value);
+    return formatters().compactEuro.format(value);
   }
   return money(value, 0);
 }
 
 export function decimal(value: number | null | undefined, digits = 1): string {
   if (value === null || value === undefined || Number.isNaN(value)) return '—';
-  if (digits >= 3) return threeDecimals.format(value);
-  if (digits === 2) return twoDecimals.format(value);
-  return oneDecimal.format(value);
+  const format = formatters();
+  if (digits >= 3) return format.threeDecimals.format(value);
+  if (digits === 2) return format.twoDecimals.format(value);
+  return format.oneDecimal.format(value);
 }
 
 export function price(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return '—';
-  return `${threeDecimals.format(value)} €`;
+  return formatters().euroThree.format(value);
 }
 
 export function km(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return '—';
-  return `${integer.format(value)} km`;
+  return `${formatters().integer.format(value)} km`;
 }
 
 export function liters(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return '—';
-  return `${oneDecimal.format(value)} L`;
+  return `${formatters().oneDecimal.format(value)} L`;
 }
 
 export function consumption(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return '—';
-  return `${oneDecimal.format(value)} L/100`;
+  return `${formatters().oneDecimal.format(value)} L/100`;
 }
 
 export function percent(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return '—';
-  return `${oneDecimal.format(value)} %`;
+  return translate('common.percent', { value: formatters().oneDecimal.format(value) });
 }
 
 export function parseDate(value: string | Date | null | undefined): Date | null {
@@ -97,22 +132,24 @@ export function parseDate(value: string | Date | null | undefined): Date | null 
 
 export function dateShort(value: string | Date | null | undefined): string {
   const date = parseDate(value);
-  return date ? shortDate.format(date).replace('.', '') : '—';
+  return date ? formatters().shortDate.format(date).replace(/\./g, '') : '—';
 }
 
 export function dateMedium(value: string | Date | null | undefined): string {
   const date = parseDate(value);
-  return date ? mediumDate.format(date).replace('.', '') : '—';
+  return date ? formatters().mediumDate.format(date).replace(/\./g, '') : '—';
 }
 
 export function dateTime(value: string | Date | null | undefined): string {
   const date = parseDate(value);
-  return date ? `${mediumDate.format(date).replace('.', '')} · ${timeFormat.format(date)}` : '—';
+  if (!date) return '—';
+  const format = formatters();
+  return `${format.mediumDate.format(date).replace(/\./g, '')} · ${format.time.format(date)}`;
 }
 
 export function timeOnly(value: string | Date | null | undefined): string {
   const date = parseDate(value);
-  return date ? timeFormat.format(date) : '';
+  return date ? formatters().time.format(date) : '';
 }
 
 export function relativeDay(value: string | Date | null | undefined): string {
@@ -122,24 +159,33 @@ export function relativeDay(value: string | Date | null | undefined): string {
   const day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const now = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const diff = Math.round((day.getTime() - now.getTime()) / 86_400_000);
-  if (diff === 0) return 'Hoy';
-  if (diff === -1) return 'Ayer';
-  if (diff > -7 && diff < 0) return relativeFormat.format(diff, 'day');
+  if (diff === 0) return translate('dates.today');
+  if (diff === -1) return translate('dates.yesterday');
+  if (diff > -7 && diff < 0) return formatters().relative.format(diff, 'day');
   return dateShort(date);
 }
 
 export function remainingDays(days: number | null | undefined): string {
-  if (days === null || days === undefined) return 'Sin fecha';
-  if (days < 0) return `${integer.format(Math.abs(days))} días de retraso`;
-  if (days === 0) return 'Vence hoy';
-  if (days === 1) return 'Queda 1 día';
-  return `Quedan ${integer.format(days)} días`;
+  if (days === null || days === undefined) return translate('maintenance.remaining.noDate');
+  if (days < 0) {
+    return translatePlural('maintenance.remaining.overdue', Math.abs(days), {
+      count: Math.abs(days),
+    });
+  }
+  if (days === 0) return translate('maintenance.remaining.today');
+  return translatePlural('maintenance.remaining.left', days, { count: days });
 }
 
 export function remainingKm(value: number | null | undefined): string {
-  if (value === null || value === undefined) return 'Sin límite';
-  if (value < 0) return `${km(Math.abs(value))} de exceso`;
-  return `Quedan ${km(value)}`;
+  if (value === null || value === undefined) return translate('maintenance.remaining.noLimit');
+  if (value < 0) {
+    return translate('maintenance.remaining.excess', {
+      km: `${formatters().integer.format(Math.abs(value))} km`,
+    });
+  }
+  return translate('maintenance.remaining.kmLeft', {
+    km: `${formatters().integer.format(value)} km`,
+  });
 }
 
 export function todayInputDate(): string {
@@ -164,13 +210,6 @@ export function initials(value: string | null | undefined): string {
     .join('');
 }
 
-export const CATEGORY_LABELS: Record<ServiceCategory, string> = {
-  PREVENTIVE: 'Preventivo',
-  CORRECTIVE: 'Reparación',
-  MODIFICATION: 'Mejora',
-  LEGAL: 'Legal',
-};
-
 export const CATEGORY_COLORS: Record<ServiceCategory, string> = {
   PREVENTIVE: 'success',
   CORRECTIVE: 'danger',
@@ -178,39 +217,35 @@ export const CATEGORY_COLORS: Record<ServiceCategory, string> = {
   LEGAL: 'warning',
 };
 
-export const STATUS_LABELS: Record<MaintenanceStatus, string> = {
-  OVERDUE: 'Vencido',
-  DUE_SOON: 'Próximo',
-  OK: 'Al día',
-  UNKNOWN: 'Sin datos',
-};
-
-export const PERFORMED_BY_LABELS: Record<PerformedBy, string> = {
-  DIY: 'Por mi cuenta',
-  WORKSHOP: 'Taller',
-};
-
-export const FUEL_TYPE_LABELS: Record<FuelType, string> = {
-  GASOLINE_95: 'Gasolina 95',
-  GASOLINE_98: 'Gasolina 98',
-  DIESEL: 'Diésel',
-  HYBRID: 'Híbrido',
-  PLUG_IN_HYBRID: 'Híbrido enchufable',
-  ELECTRIC: 'Eléctrico',
-  LPG: 'GLP',
-  OTHER: 'Otro',
-};
-
 export function categoryLabel(category: ServiceCategory | null | undefined): string {
-  return category ? CATEGORY_LABELS[category] : 'Intervención';
+  return translate(category ? `labels.category.${category}` : 'labels.category.none');
 }
 
 export function statusLabel(status: MaintenanceStatus | null | undefined): string {
-  return status ? STATUS_LABELS[status] : 'Sin datos';
+  return translate(status ? `labels.status.${status}` : 'labels.status.UNKNOWN');
 }
 
 export function fuelName(type: FuelType | null | undefined): string {
-  return type ? FUEL_TYPE_LABELS[type] : 'Combustible';
+  return translate(type ? `labels.fuelType.${type}` : 'labels.fuelType.none');
+}
+
+export function performedByLabel(value: PerformedBy | null | undefined): string {
+  return translate(value ? `labels.performedBy.${value}` : 'labels.performedBy.none');
+}
+
+const RULE_NAMES: Record<string, TranslationKey> = {
+  'Aceite y filtro': 'rules.oilFilter',
+  'Filtro de aire': 'rules.airFilter',
+  'Filtro de habitáculo': 'rules.cabinFilter',
+  'Líquido de frenos': 'rules.brakeFluid',
+  Bujías: 'rules.sparkPlugs',
+  ITV: 'rules.mot',
+};
+
+export function ruleName(name: string | null | undefined): string {
+  if (!name) return name ?? '';
+  const key = RULE_NAMES[name];
+  return key ? translate(key) : name;
 }
 
 export function categoryTone(category: ServiceCategory | null | undefined): string {
@@ -231,24 +266,68 @@ export function statusTone(status: MaintenanceStatus | null | undefined): string
   }
 }
 
+const BACKEND_MESSAGES: Record<string, TranslationKey> = {
+  'Correo o contraseña incorrectos.': 'errors.invalidCredentials',
+  'Ya existe una cuenta con ese correo electrónico.': 'errors.emailExists',
+  'La contraseña actual no es correcta.': 'errors.currentPassword',
+  'La sesión ya no es válida.': 'errors.sessionInvalid',
+  'Regla de mantenimiento no encontrada.': 'errors.ruleNotFound',
+  'Repostaje no encontrado.': 'errors.fuelNotFound',
+  'La fecha del repostaje no puede estar en el futuro.': 'errors.fuelFuture',
+  'Vehículo no encontrado.': 'errors.vehicleNotFound',
+  'La foto del vehículo debe ser una imagen JPEG, PNG, WebP o AVIF.': 'errors.vehiclePhotoType',
+  'Intervención no encontrada.': 'errors.serviceNotFound',
+  'La fecha de la intervención no puede estar en el futuro.': 'errors.serviceFuture',
+  'La regla de mantenimiento no pertenece a este vehículo.': 'errors.ruleVehicle',
+  'Inicia sesión para continuar.': 'errors.loginToContinue',
+  'No tienes permisos para esta acción.': 'errors.forbidden',
+  'Revisa los campos marcados e inténtalo de nuevo.': 'errors.reviewFields',
+  'no debe estar vacío': 'errors.validation.required',
+  'no debe ser nulo': 'errors.validation.required',
+  'debe ser un correo electrónico válido': 'errors.validation.email',
+};
+
+function localizeBackendMessage(message: string): string {
+  const text = message.trim();
+  const key = BACKEND_MESSAGES[text];
+  if (key) return translate(key);
+
+  const odometer =
+    /^El odómetro no puede ser inferior al kilometraje actual del coche \((.+)\)\.$/.exec(text);
+  if (odometer) {
+    return translate('errors.odometerCurrent', { km: odometer[1] });
+  }
+
+  const min = /^debe ser mayor que o igual a (.+)$/.exec(text);
+  if (min) return translate('errors.validation.min', { value: min[1] });
+
+  const max = /^debe ser menor que o igual a (.+)$/.exec(text);
+  if (max) return translate('errors.validation.max', { value: max[1] });
+
+  const size = /^el tamaño debe estar entre (\d+) y (\d+)$/.exec(text);
+  if (size) return translate('errors.validation.size', { min: size[1], max: size[2] });
+
+  return text;
+}
+
 export function errorMessage(error: unknown): string {
   if (error instanceof HttpErrorResponse) {
-    if (error.status === 0) return 'No hay conexión con el servidor. El dato se guardará en tu dispositivo.';
+    if (error.status === 0) return translate('errors.noConnection');
     const detail = error.error?.detail;
     const errors = error.error?.errors;
     if (errors && typeof errors === 'object') {
       const first = Object.values(errors)[0];
-      if (typeof first === 'string') return first;
+      if (typeof first === 'string') return localizeBackendMessage(first);
     }
-    if (typeof detail === 'string') return detail;
-    if (error.status === 401) return 'Tu sesión ha caducado. Vuelve a iniciar sesión.';
-    if (error.status === 403) return 'No tienes permisos para esta acción.';
-    if (error.status === 404) return 'No hemos encontrado ese recurso.';
-    if (error.status >= 500) return 'El servidor no está disponible ahora mismo.';
-    return 'No se ha podido completar la operación.';
+    if (typeof detail === 'string') return localizeBackendMessage(detail);
+    if (error.status === 401) return translate('errors.sessionExpired');
+    if (error.status === 403) return translate('errors.forbidden');
+    if (error.status === 404) return translate('errors.notFound');
+    if (error.status >= 500) return translate('errors.server');
+    return translate('errors.operation');
   }
   if (error instanceof Error) return error.message;
-  return 'Ha ocurrido un error inesperado.';
+  return translate('errors.unexpected');
 }
 
 export function isNetworkError(error: unknown): boolean {

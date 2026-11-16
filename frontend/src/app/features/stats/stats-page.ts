@@ -11,6 +11,7 @@ import {
   price,
   moneyCompact,
 } from '../../core/format';
+import { I18nService } from '../../core/i18n.service';
 import type { ServiceCategory, StationStats, VehicleStats } from '../../core/models';
 import { OfflineQueueService } from '../../core/offline-queue.service';
 import { StatsService } from '../../core/stats.service';
@@ -21,6 +22,7 @@ import { LineChartComponent, type LinePoint } from '../../shared/charts/line-cha
 import { SpendChartComponent } from '../../shared/charts/spend-chart';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
 import { IconComponent } from '../../shared/icon/icon';
+import { TranslatePipe } from '../../shared/i18n/translate.pipe';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { StatCardComponent } from '../../shared/stat-card/stat-card';
 
@@ -35,14 +37,19 @@ import { StatCardComponent } from '../../shared/stat-card/stat-card';
     LineChartComponent,
     DonutChartComponent,
     EmptyStateComponent,
+    TranslatePipe,
   ],
   templateUrl: './stats-page.html',
 })
 export class StatsPageComponent {
   private readonly statsService = inject(StatsService);
+  private readonly i18n = inject(I18nService);
   private readonly queue = inject(OfflineQueueService);
   private readonly toast = inject(ToastService);
   readonly store = inject(VehicleStore);
+  readonly vehicleName = computed(
+    () => this.store.selected()?.name ?? this.i18n.t('common.yourCar'),
+  );
 
   readonly stats = signal<VehicleStats | null>(null);
   readonly loading = signal(false);
@@ -75,27 +82,30 @@ export class StatsPageComponent {
     return sum / 12;
   });
 
-  readonly consumptionData = computed<LinePoint[]>(() =>
-    (this.stats()?.consumption ?? []).map((point) => ({
+  readonly consumptionData = computed<LinePoint[]>(() => {
+    this.i18n.locale();
+    return (this.stats()?.consumption ?? []).map((point) => ({
       label: dateShort(point.date),
       value: point.value,
-    })),
-  );
+    }));
+  });
 
-  readonly priceData = computed<LinePoint[]>(() =>
-    (this.stats()?.prices ?? []).map((point) => ({
+  readonly priceData = computed<LinePoint[]>(() => {
+    this.i18n.locale();
+    return (this.stats()?.prices ?? []).map((point) => ({
       label: dateShort(point.date),
       value: point.value,
-    })),
-  );
+    }));
+  });
 
-  readonly categorySegments = computed<DonutSegment[]>(() =>
-    (this.stats()?.categories ?? []).map((category) => ({
+  readonly categorySegments = computed<DonutSegment[]>(() => {
+    this.i18n.locale();
+    return (this.stats()?.categories ?? []).map((category) => ({
       label: categoryLabel(category.category),
       value: category.total,
       color: this.categoryColors[category.category] ?? 'var(--ch-faint)',
-    })),
-  );
+    }));
+  });
 
   readonly stationsByPrice = computed<StationStats[]>(() =>
     [...(this.stats()?.stations ?? [])].sort((a, b) => a.avgPrice - b.avgPrice),

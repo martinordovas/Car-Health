@@ -1,11 +1,16 @@
 import { Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { TranslatePipe } from '../i18n/translate.pipe';
 
 @Component({
   selector: 'app-logo',
-  imports: [RouterLink],
+  imports: [RouterLink, TranslatePipe],
   template: `
-    <a routerLink="/app/dashboard" class="inline-flex items-center gap-2.5" aria-label="Car Health, ir al inicio">
+    <a
+      routerLink="/app/dashboard"
+      class="inline-flex items-center gap-2.5"
+      [attr.aria-label]="'brand.homeAria' | t"
+    >
       <span
         class="grid size-10 shrink-0 place-items-center rounded-[13px] shadow-[0_8px_22px_-12px_rgba(20,61,43,0.8)]"
         [class]="inverse() ? 'bg-accent text-accent-ink' : 'bg-brand text-accent'"
@@ -29,7 +34,7 @@ import { RouterLink } from '@angular/router';
               class="mt-1 text-[9px] font-semibold uppercase tracking-[0.16em]"
               [class]="inverse() ? 'text-white/45' : 'text-faint'"
             >
-              tu garaje, en orden
+              {{ 'brand.tagline' | t }}
             </span>
           }
         </span>

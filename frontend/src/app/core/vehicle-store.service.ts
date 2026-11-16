@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { Observable, finalize, of, shareReplay, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { I18nService } from './i18n.service';
 import type { Vehicle, VehicleInput } from './models';
 import { SessionService } from './session.service';
 
@@ -10,6 +11,7 @@ const SELECTED_KEY = 'ch-vehicle';
 @Injectable({ providedIn: 'root' })
 export class VehicleStore {
   private readonly http = inject(HttpClient);
+  private readonly i18n = inject(I18nService);
   private readonly session = inject(SessionService);
   private readonly base = `${environment.apiUrl}/vehicles`;
 
@@ -70,7 +72,7 @@ export class VehicleStore {
 
   refresh(): void {
     this.load(true).subscribe({
-      error: (error) => this.error.set(error?.message ?? 'No se pudo cargar el garaje.'),
+      error: (error) => this.error.set(error?.message ?? this.i18n.t('errors.loadGarage')),
     });
   }
 

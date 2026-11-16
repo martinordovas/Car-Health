@@ -4,9 +4,11 @@
       <span class="mx-auto grid size-14 place-items-center rounded-2xl bg-brand-soft text-brand dark:text-accent">
         <app-icon name="car" [size]="26" />
       </span>
-      <h1 class="mt-5 text-xl font-bold">Añade un coche primero</h1>
-      <p class="mt-2 text-sm text-muted">Necesitamos saber en qué coche vas a apuntar el repostaje.</p>
-      <a routerLink="/app/garage" class="btn btn-primary mt-5">Ir a mi garaje</a>
+      <h1 class="mt-5 text-xl font-bold">{{ 'fuel.form.noCarTitle' | t }}</h1>
+      <p class="mt-2 text-sm text-muted">{{ 'fuel.form.noCarDescription' | t }}</p>
+      <a routerLink="/app/garage" class="btn btn-primary mt-5">{{
+        'fuel.form.goGarage' | t
+      }}</a>
     </div>
   </div>
 } @else {
@@ -14,18 +16,18 @@
     <div class="mb-5">
       <a routerLink="/app/fuel" class="btn btn-ghost btn-sm -ms-3 text-muted">
         <app-icon name="arrow-left" [size]="15" />
-        Volver a repostajes
+        {{ 'fuel.form.back' | t }}
       </a>
     </div>
 
     <app-page-header
-      eyebrow="Combustible"
-      title="Nuevo repostaje"
-      [subtitle]="'Apunta el depósito de ' + (store.selected()?.name ?? 'tu coche') + '. Calculamos el ahorro y el consumo real al vuelo.'"
+      [eyebrow]="'fuel.form.eyebrow' | t"
+      [title]="'fuel.form.title' | t"
+      [subtitle]="'fuel.form.subtitle' | t: { vehicle: vehicleName() }"
     >
       <span class="chip chip-neutral">
         <app-icon name="cloud-off" [size]="12" />
-        Se puede guardar offline
+        {{ 'fuel.form.offlineChip' | t }}
       </span>
     </app-page-header>
 
@@ -37,28 +39,28 @@
     }
 
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-      <div class="space-y-4">
+      <div class="min-w-0 space-y-4">
         <section class="card p-5 sm:p-6">
           <div class="mb-5 flex items-center gap-3">
             <span class="grid size-9 place-items-center rounded-xl bg-brand-soft text-brand dark:text-accent">
               <app-icon name="map-pin" [size]="17" />
             </span>
             <div>
-              <h2 class="section-title">Cuándo y dónde</h2>
-              <p class="text-[11px] text-muted">Fecha, kilómetros y gasolinera.</p>
+              <h2 class="section-title">{{ 'fuel.form.whenWhere' | t }}</h2>
+              <p class="text-[11px] text-muted">{{ 'fuel.form.whenWhereHint' | t }}</p>
             </div>
           </div>
 
           <div class="grid gap-4 sm:grid-cols-2">
             <div>
-              <label class="label" for="date">Fecha y hora</label>
+              <label class="label" for="date">{{ 'fuel.form.dateLabel' | t }}</label>
               <app-datetime-picker inputId="date" formControlName="date" [invalid]="!!fieldError('date')" />
               @if (fieldError('date'); as message) {
                 <p class="error-text">{{ message }}</p>
               }
             </div>
             <div>
-              <label class="label" for="odometer">Odómetro actual</label>
+              <label class="label" for="odometer">{{ 'fuel.form.odometerLabel' | t }}</label>
               <div class="field-shell">
                 <span class="field-icon"><app-icon name="gauge" [size]="17" /></span>
                 <input
@@ -68,26 +70,39 @@
                   class="field field-unit"
                   formControlName="odometer"
                   [class.field-error]="fieldError('odometer')"
-                  placeholder="48.320"
+                  [attr.placeholder]="'fuel.form.odometerPlaceholder' | t"
                 />
-                <span class="field-suffix">km</span>
+                <span class="field-suffix">{{ 'common.km' | t }}</span>
               </div>
               @if (fieldError('odometer'); as message) {
                 <p class="error-text">{{ message }}</p>
               } @else {
-                <p class="hint">Ahora mismo el coche marca {{ km(store.selected()?.currentOdometer) }}.</p>
+                <p class="hint">
+                  {{
+                    'fuel.form.odometerHint'
+                      | t: { km: km(store.selected()?.currentOdometer) }
+                  }}
+                </p>
               }
             </div>
             <div class="sm:col-span-2">
-              <label class="label" for="stationName">Gasolinera</label>
+              <label class="label" for="stationName">{{ 'fuel.form.stationLabel' | t }}</label>
               <div class="field-shell">
                 <span class="field-icon"><app-icon name="fuel" [size]="17" /></span>
-                <input id="stationName" class="field" formControlName="stationName" placeholder="Plenoil, Repsol, Cepsa…" maxlength="100" />
+                <input
+                  id="stationName"
+                  class="field"
+                  formControlName="stationName"
+                  [attr.placeholder]="'fuel.form.stationPlaceholder' | t"
+                  maxlength="100"
+                />
               </div>
             </div>
             <div class="relative sm:col-span-2">
               <div class="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-                <label class="label !mb-0" for="stationLocation">Ubicación o sucursal</label>
+                <label class="label !mb-0" for="stationLocation">{{
+                  'fuel.form.locationLabel' | t
+                }}</label>
                 <button
                   type="button"
                   class="inline-flex items-center gap-1.5 text-[10px] font-bold text-brand transition hover:text-brand-deep disabled:opacity-50 dark:text-accent"
@@ -96,10 +111,10 @@
                 >
                   @if (locating()) {
                     <app-icon name="refresh" [size]="12" class="spin-slow" />
-                    Localizando…
+                    {{ 'fuel.form.locating' | t }}
                   } @else {
                     <app-icon name="crosshair" [size]="12" />
-                    Usar mi ubicación
+                    {{ 'fuel.form.useLocation' | t }}
                   }
                 </button>
               </div>
@@ -109,7 +124,7 @@
                   id="stationLocation"
                   class="field pe-10"
                   formControlName="stationLocation"
-                  placeholder="Busca una gasolinera, taller o dirección…"
+                  [attr.placeholder]="'fuel.form.locationPlaceholder' | t"
                   autocomplete="off"
                   maxlength="160"
                   role="combobox"
@@ -151,13 +166,14 @@
                     </button>
                   }
                   <p class="bg-surface-soft px-3.5 py-2 text-[9px] font-medium text-faint">
-                    Búsqueda real con
+                    {{ 'fuel.form.osmSearchPrefix' | t }}
                     <a
                       class="underline decoration-line underline-offset-2 hover:text-ink"
                       href="https://www.openstreetmap.org/copyright"
                       target="_blank"
                       rel="noopener noreferrer"
-                    >OpenStreetMap</a>.
+                      >OpenStreetMap</a
+                    >.
                   </p>
                 </div>
               }
@@ -165,9 +181,9 @@
               @if (locationError()) {
                 <p class="error-text">{{ locationError() }}</p>
               } @else if (!connectivity.online()) {
-                <p class="hint">Sin conexión: escribe la ubicación a mano. La búsqueda volverá al recuperar la red.</p>
+                <p class="hint">{{ 'fuel.form.locationHintOffline' | t }}</p>
               } @else {
-                <p class="hint">Busca por nombre o dirección, o usa tu ubicación actual para rellenarla.</p>
+                <p class="hint">{{ 'fuel.form.locationHint' | t }}</p>
               }
             </div>
           </div>
@@ -179,14 +195,14 @@
               <app-icon name="fuel" [size]="17" />
             </span>
             <div>
-              <h2 class="section-title">Combustible</h2>
-              <p class="text-[11px] text-muted">Litros y precio por litro del ticket.</p>
+              <h2 class="section-title">{{ 'fuel.form.fuelSection' | t }}</h2>
+              <p class="text-[11px] text-muted">{{ 'fuel.form.fuelSectionHint' | t }}</p>
             </div>
           </div>
 
           <div class="grid gap-4 sm:grid-cols-2">
             <div>
-              <label class="label" for="liters">Litros repostados</label>
+              <label class="label" for="liters">{{ 'fuel.form.litersLabel' | t }}</label>
               <div class="field-shell">
                 <span class="field-icon"><app-icon name="droplet" [size]="17" /></span>
                 <input
@@ -197,16 +213,16 @@
                   class="field field-unit"
                   formControlName="liters"
                   [class.field-error]="fieldError('liters')"
-                  placeholder="42,50"
+                  [attr.placeholder]="'fuel.form.litersPlaceholder' | t"
                 />
-                <span class="field-suffix">L</span>
+                <span class="field-suffix">{{ 'common.liters' | t }}</span>
               </div>
               @if (fieldError('liters'); as message) {
                 <p class="error-text">{{ message }}</p>
               }
             </div>
             <div>
-              <label class="label" for="pricePerLiter">Precio por litro</label>
+              <label class="label" for="pricePerLiter">{{ 'fuel.form.priceLabel' | t }}</label>
               <div class="field-shell">
                 <span class="field-icon"><app-icon name="euro" [size]="17" /></span>
                 <input
@@ -217,9 +233,9 @@
                   class="field field-unit"
                   formControlName="pricePerLiter"
                   [class.field-error]="fieldError('pricePerLiter')"
-                  placeholder="1,529"
+                  [attr.placeholder]="'fuel.form.pricePlaceholder' | t"
                 />
-                <span class="field-suffix">€/L</span>
+                <span class="field-suffix">{{ 'common.perLiter' | t }}</span>
               </div>
               @if (fieldError('pricePerLiter'); as message) {
                 <p class="error-text">{{ message }}</p>
@@ -239,9 +255,9 @@
                 <app-icon name="check-circle" [size]="16" />
               </span>
               <span>
-                <span class="block text-sm font-bold">He llenado el depósito</span>
+                <span class="block text-sm font-bold">{{ 'fuel.form.fullTankTitle' | t }}</span>
                 <span class="mt-0.5 block text-[11px] leading-relaxed text-muted">
-                  Es necesario para calcular el consumo real entre depósitos llenos. Si es parcial, solo contamos el gasto.
+                  {{ 'fuel.form.fullTankHint' | t }}
                 </span>
               </span>
             </span>
@@ -264,12 +280,14 @@
               <app-icon name="gauge" [size]="17" />
             </span>
             <div>
-              <h2 class="section-title">Dato opcional</h2>
-              <p class="text-[11px] text-muted">Compara la cifra del cuadro con el consumo real.</p>
+              <h2 class="section-title">{{ 'fuel.form.optionalSection' | t }}</h2>
+              <p class="text-[11px] text-muted">{{ 'fuel.form.optionalSectionHint' | t }}</p>
             </div>
           </div>
           <div class="max-w-xs">
-            <label class="label" for="boardComputerAvg">Consumo que marca el coche</label>
+            <label class="label" for="boardComputerAvg">{{
+              'fuel.form.boardComputerLabel' | t
+            }}</label>
             <div class="field-shell">
               <span class="field-icon"><app-icon name="chart" [size]="17" /></span>
               <input
@@ -279,22 +297,24 @@
                 step="0.1"
                 class="field field-unit"
                 formControlName="boardComputerAvg"
-                placeholder="6,2"
+                [attr.placeholder]="'fuel.form.boardComputerPlaceholder' | t"
               />
-              <span class="field-suffix">L/100</span>
+              <span class="field-suffix">{{ 'common.consumptionUnit' | t }}</span>
             </div>
           </div>
         </section>
       </div>
 
-      <aside class="space-y-4 lg:sticky lg:top-24">
+      <aside class="min-w-0 space-y-4 lg:sticky lg:top-24">
         <div class="overflow-hidden rounded-[26px] bg-brand p-5 text-white shadow-float">
-          <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-white/45">Total del repostaje</p>
+          <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-white/45">
+            {{ 'fuel.form.totalTitle' | t }}
+          </p>
           <p class="metric-value mt-2 text-[2.4rem] leading-none text-white">{{ total() > 0 ? money(total()) : '—' }}</p>
           <p class="mt-2 text-[11px] text-white/45">
-            {{ formLiters() > 0 ? decimal(formLiters()) + ' L' : 'Litros' }}
+            {{ formLiters() > 0 ? liters(formLiters()) : ('fuel.form.litersShort' | t) }}
             ×
-            {{ formPrice() > 0 ? price(formPrice()) : 'precio/L' }}
+            {{ formPrice() > 0 ? price(formPrice()) : ('fuel.form.priceShort' | t) }}
           </p>
 
           <div class="my-5 h-px bg-white/10"></div>
@@ -306,23 +326,32 @@
                   <app-icon [name]="saving.cheaper ? 'trend-down' : 'info'" [size]="14" />
                 </span>
                 <p class="text-xs font-bold">
-                  {{ saving.cheaper ? 'Ahorro estimado ' + money(saving.amount) : 'Un poco más caro' }}
+                  {{
+                    saving.cheaper
+                      ? ('fuel.form.estimatedSavings' | t: { amount: money(saving.amount) })
+                      : ('fuel.form.aBitMoreExpensive' | t)
+                  }}
                 </p>
               </div>
               <p class="mt-2 text-[11px] leading-relaxed text-white/55">
-                @if (saving.cheaper) {
-                  Un {{ decimal(saving.percent < 0 ? -saving.percent : saving.percent) }} % más barato que {{ saving.label }}.
-                } @else {
-                  Un {{ decimal(saving.percent < 0 ? -saving.percent : saving.percent) }} % por encima de {{ saving.label }}.
-                }
-                El cálculo definitivo se confirma al guardar.
+                {{
+                  (saving.cheaper ? 'fuel.form.cheaperBy' : 'fuel.form.moreExpensiveBy')
+                    | t
+                      : {
+                          percent: decimal(
+                            saving.percent < 0 ? -saving.percent : saving.percent
+                          ),
+                          label: saving.label,
+                        }
+                }}
+                {{ 'fuel.form.calculationConfirmed' | t }}
               </p>
             </div>
           } @else {
             <div class="rounded-2xl bg-white/5 p-3.5">
-              <p class="text-xs font-bold">Sin referencia todavía</p>
+              <p class="text-xs font-bold">{{ 'fuel.form.noReferenceTitle' | t }}</p>
               <p class="mt-1 text-[11px] leading-relaxed text-white/45">
-                Al guardar compararemos con tu histórico de esta gasolinera o con tu último repostaje.
+                {{ 'fuel.form.noReferenceDescription' | t }}
               </p>
             </div>
           }
@@ -330,13 +359,17 @@
           <button class="btn btn-accent mt-5 w-full" type="submit" [disabled]="saving()">
             @if (saving()) {
               <app-icon name="refresh" [size]="17" class="spin-slow" />
-              Guardando…
+              {{ 'fuel.form.saving' | t }}
             } @else {
               <app-icon name="check" [size]="17" />
-              Guardar repostaje
+              {{ 'fuel.form.save' | t }}
             }
           </button>
-          <a routerLink="/app/fuel" class="btn btn-sm mt-2 w-full text-white/60 hover:bg-white/5 hover:text-white">Cancelar</a>
+          <a
+            routerLink="/app/fuel"
+            class="btn btn-sm mt-2 w-full text-white/60 hover:bg-white/5 hover:text-white"
+            >{{ 'fuel.form.cancel' | t }}</a
+          >
         </div>
 
         <div class="card p-5">
@@ -345,10 +378,9 @@
               <app-icon name="sparkles" [size]="16" />
             </span>
             <div>
-              <p class="text-xs font-bold">Cómo calculamos el ahorro</p>
+              <p class="text-xs font-bold">{{ 'fuel.form.howSavingsTitle' | t }}</p>
               <p class="mt-1 text-[11px] leading-relaxed text-muted">
-                Comparamos el precio con la media ponderada de la misma gasolinera. Si es tu primera vez allí,
-                usamos tu repostaje anterior como referencia.
+                {{ 'fuel.form.howSavingsDescription' | t }}
               </p>
             </div>
           </div>
@@ -356,7 +388,7 @@
 
         <div class="flex items-center justify-center gap-1.5 text-[10px] font-medium text-faint">
           <app-icon name="cloud-off" [size]="12" />
-          Si no hay conexión, se guarda y se envía después.
+          {{ 'fuel.form.offlineHint' | t }}
         </div>
       </aside>
     </form>
