@@ -22,5 +22,12 @@ Thumbs.db
 .vscode/
 *.iml
 
-# OpenCode
-.opencode/
+# Obsidian: se versiona la configuración, no el estado local
+.obsidian/workspace.json
+
+# OpenCode: se versionan skills y comandos, no el estado local
+.opencode/*
+!.opencode/skills/
+!.opencode/commands/
+!.opencode/skills/**
+!.opencode/commands/**
