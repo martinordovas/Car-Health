@@ -6,10 +6,15 @@ import { dictionaryKeys, setActiveLocale, translate, translatePlural } from './i
 describe('i18n', () => {
   afterEach(() => setActiveLocale('es'));
 
+  it('organiza los diccionarios por secciones', () => {
+    expect(Object.values(es).every((section) => typeof section === 'object')).toBe(true);
+    expect(Object.values(en).every((section) => typeof section === 'object')).toBe(true);
+  });
+
   it('mantiene las mismas claves en español e inglés', () => {
-    expect(Object.keys(en).sort()).toEqual(Object.keys(es).sort());
-    expect(dictionaryKeys('es')).toHaveLength(Object.keys(es).length);
-    expect(dictionaryKeys('en')).toHaveLength(Object.keys(en).length);
+    expect(dictionaryKeys('en').sort()).toEqual(dictionaryKeys('es').sort());
+    expect(dictionaryKeys('es')).toContain('dashboard.vehicleToday');
+    expect(dictionaryKeys('es')).toContain('maintenance.partsCount.other');
   });
 
   it('traduce y sustituye parámetros', () => {

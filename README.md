@@ -287,16 +287,24 @@ La estrategia se verificó con una build de producción y Playwright: recarga of
 
 ## Diccionario de textos
 
-La interfaz no contiene textos literales: todo pasa por `frontend/src/app/i18n/es.json` y `en.json`. Las claves son planas y compartidas por ambos idiomas:
+La interfaz no contiene textos literales: todo pasa por `frontend/src/app/i18n/es.json` y `en.json`. Los diccionarios están organizados por secciones anidadas y comparten las mismas claves en ambos idiomas:
 
 ```json
 {
-  "dashboard.emptyTitle": "Tu garaje está esperando.",
-  "dashboard.vehicleToday": "Así va {vehicle} hoy.",
-  "maintenance.partsCount.one": "1 recambio",
-  "maintenance.partsCount.other": "{count} recambios"
+  "dashboard": {
+    "emptyTitle": "Tu garaje está esperando.",
+    "vehicleToday": "Así va {vehicle} hoy."
+  },
+  "maintenance": {
+    "partsCount": {
+      "one": "1 recambio",
+      "other": "{count} recambios"
+    }
+  }
 }
 ```
+
+Las claves se siguen escribiendo con la ruta completa (`dashboard.vehicleToday`, `maintenance.partsCount.one`). `I18nService` aplana internamente los diccionarios y `TranslationKey` se genera automáticamente a partir del JSON español, así que añadir una sección nueva no requiere tocar tipos ni configuración.
 
 En las plantillas se usa el pipe `t`; para textos generados en TypeScript se inyecta `I18nService`:
 
