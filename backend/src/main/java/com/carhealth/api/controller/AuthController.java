@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Locale;
+
 @RestController
 @RequestMapping("/api/v1/auth")
 @Tag(name = "Autenticación", description = "Registro, login y perfil del usuario")
@@ -29,9 +31,25 @@ public class AuthController {
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Crear una cuenta y obtener un JWT")
-    public AuthDtos.AuthResponse register(@Valid @RequestBody AuthDtos.RegisterRequest request) {
-        return authService.register(request);
+    @Operation(summary = "Crear una cuenta y enviar el código de verificación por correo")
+    public AuthDtos.VerificationResponse register(
+            @Valid @RequestBody AuthDtos.RegisterRequest request,
+            Locale locale) {
+        return authService.register(request, locale);
+    }
+
+    @PostMapping("/verify-email")
+    @Operation(summary = "Verificar el correo con el código recibido")
+    public AuthDtos.AuthResponse verifyEmail(@Valid @RequestBody AuthDtos.VerifyEmailRequest request) {
+        return authService.verifyEmail(request);
+    }
+
+    @PostMapping("/resend-verification")
+    @Operation(summary = "Volver a enviar el código de verificación")
+    public AuthDtos.VerificationResponse resendVerification(
+            @Valid @RequestBody AuthDtos.ResendVerificationRequest request,
+            Locale locale) {
+        return authService.resendVerification(request.email(), locale);
     }
 
     @PostMapping("/login")

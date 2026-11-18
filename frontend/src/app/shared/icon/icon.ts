@@ -181,7 +181,7 @@ export type IconName =
         @case ('euro') {
           <path d="M4 10h12" />
           <path d="M4 14h9" />
-          <path d="M18 6a6.5 6.5 0 0 0-9 9 6.5 6.5 0 0 0 9 9" />
+          <path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2" />
         }
         @case ('trend-down') {
           <path d="m22 17-8.5-8.5-5 5L2 7" />

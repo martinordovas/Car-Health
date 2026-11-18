@@ -10,6 +10,13 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface VerificationResponse {
+  email: string;
+  expiresInSeconds: number;
+  resendAfterSeconds: number;
+  verificationRequired: boolean;
+}
+
 export type FuelType =
   | 'GASOLINE_95'
   | 'GASOLINE_98'

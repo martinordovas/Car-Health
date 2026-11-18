@@ -21,6 +21,17 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    @ExceptionHandler(EmailVerificationRequiredException.class)
+    public ResponseEntity<ProblemDetail> handleVerificationRequired(EmailVerificationRequiredException ex) {
+        ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        detail.setTitle("Verificación pendiente");
+        detail.setProperty("verificationRequired", true);
+        detail.setProperty("email", ex.getEmail());
+        detail.setProperty("expiresInSeconds", ex.getExpiresInSeconds());
+        detail.setProperty("resendAfterSeconds", ex.getResendAfterSeconds());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(detail);
+    }
+
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ProblemDetail> handleApiException(ApiException ex) {
         ProblemDetail detail = ProblemDetail.forStatusAndDetail(ex.getStatus(), ex.getMessage());
@@ -82,6 +93,7 @@ public class GlobalExceptionHandler {
             case FORBIDDEN -> "Acceso denegado";
             case NOT_FOUND -> "No encontrado";
             case CONFLICT -> "Conflicto";
+            case TOO_MANY_REQUESTS -> "Demasiadas solicitudes";
             default -> "Error";
         };
     }

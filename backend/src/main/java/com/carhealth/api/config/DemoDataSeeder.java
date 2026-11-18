@@ -64,7 +64,9 @@ public class DemoDataSeeder implements ApplicationRunner {
             return;
         }
 
-        User demo = userRepository.save(new User(DEMO_EMAIL, passwordEncoder.encode("demo1234"), "Marta"));
+        User demo = new User(DEMO_EMAIL, passwordEncoder.encode("demo1234"), "Marta");
+        demo.setEmailVerified(true);
+        demo = userRepository.save(demo);
         VehicleDtos.VehicleDto vehicle = vehicleService.create(demo.getId(), new VehicleDtos.VehicleRequest(
                 "Seat", "León", 2021, "El León", "DPBA", "VSSZZZKLZMR012345", "1234 KLM",
                 31_800, LocalDate.now().minusYears(3), new BigDecimal("21900.00"),

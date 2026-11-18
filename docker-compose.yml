@@ -32,6 +32,16 @@ services:
       H2_CONSOLE: "false"
       SPRINGDOC_ENABLED: ${SPRINGDOC_ENABLED:-true}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost}
+      MAIL_ENABLED: ${MAIL_ENABLED:-false}
+      MAIL_HOST: ${MAIL_HOST:-localhost}
+      MAIL_PORT: ${MAIL_PORT:-1025}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-false}
+      MAIL_SMTP_STARTTLS: ${MAIL_SMTP_STARTTLS:-false}
+      MAIL_SMTP_SSL: ${MAIL_SMTP_SSL:-false}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@carhealth.local}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Car Health}
       TZ: Europe/Madrid
     depends_on:
       postgres:
@@ -57,6 +67,18 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
+  # Opcional para desarrollo: captura los correos de verificación sin enviarlos.
+  # Arrancar solo este servicio:
+  #   docker compose --profile mail up -d mailpit
+  # El backend dentro de Compose debe usar MAIL_HOST=mailpit.
+  mailpit:
+    image: axllent/mailpit:v1.34.0
+    profiles: ["mail"]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
 
   caddy:
     image: caddy:2.10-alpine

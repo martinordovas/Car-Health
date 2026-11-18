@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
-import type { AuthResponse, User } from './models';
+import type { AuthResponse, User, VerificationResponse } from './models';
 import { OfflineStoreService } from './offline-store.service';
 import { SessionService } from './session.service';
 
@@ -24,15 +24,25 @@ export class AuthService {
     );
   }
 
-  register(email: string, password: string, displayName: string): Observable<AuthResponse> {
-    return this.http
-      .post<AuthResponse>(`${this.base}/register`, { email, password, displayName })
-      .pipe(
-        tap((response) => {
-          void this.store.clearResponses();
-          this.session.save(response);
-        }),
-      );
+  register(email: string, password: string, displayName: string): Observable<VerificationResponse> {
+    return this.http.post<VerificationResponse>(`${this.base}/register`, {
+      email,
+      password,
+      displayName,
+    });
+  }
+
+  verifyEmail(email: string, code: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.base}/verify-email`, { email, code }).pipe(
+      tap((response) => {
+        void this.store.clearResponses();
+        this.session.save(response);
+      }),
+    );
+  }
+
+  resendVerification(email: string): Observable<VerificationResponse> {
+    return this.http.post<VerificationResponse>(`${this.base}/resend-verification`, { email });
   }
 
   updateProfile(displayName: string): Observable<User> {

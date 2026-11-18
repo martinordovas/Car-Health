@@ -37,6 +37,14 @@ No es una hoja de cálculo con otro nombre: calcula lo que de verdad gasta el co
 - Kilometraje actual y cambio rápido de vehículo activo.
 - Plan de mantenimiento preventivo creado automáticamente para cada coche.
 
+### Cuentas y acceso
+- Registro con **verificación de correo obligatoria**.
+- Código numérico de 6 dígitos, guardado como hash y válido durante **10 minutos**.
+- Reenvío con límite de 60 segundos y máximo de 5 intentos por código.
+- Correo HTML responsive, en español o inglés según el idioma activo, con código, caducidad y aviso de seguridad.
+- El login queda bloqueado hasta que el correo esté verificado; la verificación correcta inicia sesión automáticamente.
+- La cuenta demo se crea directamente verificada.
+
 ### Idiomas
 - Interfaz completa en **español e inglés**, con selector en la cabecera, el login y las preferencias del garaje.
 - Todos los textos viven en diccionarios JSON (`es.json` y `en.json`), incluidos botones, formularios, placeholders, aria-labels, avisos y errores.
@@ -49,7 +57,7 @@ No es una hoja de cálculo con otro nombre: calcula lo que de verdad gasta el co
 - Búsqueda real de gasolineras, talleres y direcciones con OpenStreetMap/Photon.
 - Categorías y tipos de lugar traducidos al idioma activo (gasolinera, taller, concesionario, ciudad, pico…).
 - Botón **«Usar mi ubicación»** para pedir permiso al navegador, obtener las coordenadas y rellenar la dirección.
-- Cálculo automático del **gasto** y del **consumo real full-to-full**.
+- Cálculo automático del **gasto** y del **consumo real entre depósitos llenos**.
 - Comparación del precio pagado con la media histórica de esa estación y con el repostaje anterior.
 - Ahorro estimado por repostaje y acumulado.
 - Historial agrupado por mes, con litros, precio unitario, consumo y ahorro.
@@ -84,6 +92,7 @@ No es una hoja de cálculo con otro nombre: calcula lo que de verdad gasta el co
 | --- | --- |
 | Backend | Java 21, Spring Boot 4.1.2, Spring MVC, Spring Data JPA, Spring Security |
 | Autenticación | JWT HS256, BCrypt, API _stateless_ |
+| Correo | Spring Mail + SMTP; Mailpit opcional en local y código en el log |
 | Base de datos | PostgreSQL 17 en Docker; H2 en modo PostgreSQL para desarrollo local |
 | Migraciones | Flyway (`V1__init_schema.sql`, `V2__vehicle_photo.sql`) |
 | Geocodificación | Photon / OpenStreetMap + geolocalización del navegador |
@@ -195,6 +204,47 @@ También puedes arrancar sin datos de demo:
 DEMO_DATA=false ./mvnw spring-boot:run
 ```
 
+### Correo de verificación en local con Mailpit
+
+Mailpit es un servidor SMTP de pruebas: captura los correos en una bandeja local, pero **no los envía a Internet**. Es suficiente para probar el código de 6 dígitos y revisar el HTML real del correo.
+
+La forma más cómoda en este proyecto es usar el script incluido, que no necesita Docker:
+
+```bash
+./scripts/mailpit.sh
+```
+
+- Bandeja web: <http://127.0.0.1:8025>
+- SMTP para el backend: `127.0.0.1:1025`
+
+En VS Code, selecciona la configuración **Backend + Mailpit** al arrancar el backend. Esa configuración activa el envío SMTP local y apunta a Mailpit. Si el backend ya estaba arrancado, reinícialo.
+
+Si lo arrancas desde una terminal:
+
+```bash
+cd backend
+MAIL_ENABLED=true MAIL_HOST=127.0.0.1 MAIL_PORT=1025 ./mvnw spring-boot:run
+```
+
+También puedes arrancar Mailpit con Docker:
+
+```bash
+docker run --rm \
+  -p 127.0.0.1:1025:1025 \
+  -p 127.0.0.1:8025:8025 \
+  axllent/mailpit:v1.34.0
+```
+
+Con Docker Compose, el servicio está en el perfil `mail` y solo se levanta cuando lo pides:
+
+```bash
+docker compose --profile mail up -d mailpit
+```
+
+En ese caso, si el backend también corre dentro de Compose, usa `MAIL_HOST=mailpit`; si corre en tu máquina, usa `MAIL_HOST=127.0.0.1`.
+
+Para enviar correos reales, cambia a un proveedor SMTP y verifica el dominio remitente. Lo tienes explicado en [Despliegue con Docker](#despliegue-con-docker).
+
 ### Variables de entorno útiles en local
 
 | Variable | Por defecto | Uso |
@@ -209,6 +259,12 @@ DEMO_DATA=false ./mvnw spring-boot:run
 | `CORS_ORIGINS` | `http://localhost:4200` | Orígenes permitidos, separados por comas |
 | `SPRINGDOC_ENABLED` | `true` | Activa Swagger y OpenAPI |
 | `H2_CONSOLE` | `true` | Activa la consola H2 |
+| `MAIL_ENABLED` | `false` | Si es `false`, el código de verificación se escribe en el log del backend |
+| `MAIL_HOST` | `localhost` | Servidor SMTP |
+| `MAIL_PORT` | `1025` | Puerto SMTP |
+| `MAIL_USERNAME` / `MAIL_PASSWORD` | vacío | Credenciales SMTP |
+| `MAIL_SMTP_AUTH` / `MAIL_SMTP_STARTTLS` | `false` | Autenticación y STARTTLS del servidor SMTP |
+| `MAIL_FROM` / `MAIL_FROM_NAME` | `no-reply@carhealth.local` / `Car Health` | Remitente del correo |
 
 ---
 
@@ -268,7 +324,8 @@ cd backend
 
 El test de integración `ApiFlowIntegrationTest` levanta la aplicación con H2 en memoria y cubre, entre otras cosas:
 
-- registro, login con JWT y rechazo de credenciales incorrectas;
+- registro, verificación por correo, login con JWT y rechazo de credenciales incorrectas;
+- códigos de verificación caducados, intentos incorrectos y reenvío con cooldown;
 - creación de vehículo y generación automática de su plan preventivo;
 - alta de repostajes, consumo full-to-full y resumen de ahorro;
 - idempotencia de mutaciones offline y aislamiento de datos entre usuarios;
@@ -298,7 +355,7 @@ El resultado queda en `frontend/dist/frontend/browser`, que es exactamente lo qu
 
 ## API REST
 
-Todas las rutas, salvo registro, login y healthcheck, requieren la cabecera:
+Todas las rutas, salvo registro, login, verificación de correo, reenvío de código y healthcheck, requieren la cabecera:
 
 ```http
 Authorization: Bearer <token>
@@ -314,11 +371,15 @@ Authorization: Bearer <token>
 
 | Método | Ruta | Descripción |
 | --- | --- | --- |
-| `POST` | `/api/v1/auth/register` | Crea una cuenta y devuelve JWT + usuario |
-| `POST` | `/api/v1/auth/login` | Inicia sesión y devuelve JWT + usuario |
+| `POST` | `/api/v1/auth/register` | Crea la cuenta y envía el código de verificación (sin JWT todavía) |
+| `POST` | `/api/v1/auth/verify-email` | Verifica el código, activa la cuenta y devuelve JWT + usuario |
+| `POST` | `/api/v1/auth/resend-verification` | Reenvía el código con límite de 60 segundos |
+| `POST` | `/api/v1/auth/login` | Inicia sesión; devuelve 403 si el correo no está verificado |
 | `GET` | `/api/v1/auth/me` | Perfil del usuario autenticado |
 | `PATCH` | `/api/v1/auth/me` | Actualiza el nombre visible |
 | `POST` | `/api/v1/auth/change-password` | Cambia la contraseña |
+
+`POST /auth/register` devuelve `verificationRequired`, `email`, `expiresInSeconds` y `resendAfterSeconds`, pero **no un JWT**. `POST /auth/verify-email` devuelve el JWT y el usuario cuando el código es correcto. Si se intenta entrar con una cuenta sin verificar, el login responde `403` con `verificationRequired: true` y los segundos restantes de código y reenvío.
 
 ### Vehículos y análisis
 
@@ -450,6 +511,14 @@ El selector **ES / EN** cambia toda la aplicación al instante y recuerda la pre
 
 ![Dashboard en inglés](docs/screenshots/16-dashboard-english.png)
 
+### Verificación de correo
+
+La cuenta se activa introduciendo el código de 6 dígitos recibido. El código caduca a los 10 minutos y el correo se adapta al idioma activo.
+
+| Pantalla de verificación | Correo HTML |
+| --- | --- |
+| ![Pantalla de verificación](docs/screenshots/17-email-verification.png) | ![Correo de verificación](docs/screenshots/18-verification-email.png) |
+
 ### Búsqueda de ubicación real
 
 Al escribir el nombre de una gasolinera, taller o dirección, la app consulta OpenStreetMap/Photon y muestra coincidencias con su dirección. El botón **«Usar mi ubicación»** pide permiso al navegador y rellena la ubicación actual.
@@ -489,7 +558,21 @@ DEMO_DATA=false
 # Ponlo a false si no quieres Swagger público:
 SPRINGDOC_ENABLED=true
 CORS_ORIGINS=http://localhost
+
+# Correo real de verificación (ejemplo con un SMTP estándar):
+MAIL_ENABLED=true
+MAIL_HOST=smtp.tu-proveedor.com
+MAIL_PORT=587
+MAIL_USERNAME=<usuario-smtp>
+MAIL_PASSWORD=<contraseña-smtp>
+MAIL_SMTP_AUTH=true
+MAIL_SMTP_STARTTLS=true
+MAIL_SMTP_SSL=false
+MAIL_FROM=no-reply@tudominio.com
+MAIL_FROM_NAME=Car Health
 ```
+
+En local puedes dejar `MAIL_ENABLED=false`: el backend escribe el código de 6 dígitos en su log para que puedas completar el registro sin configurar SMTP. Para revisar el correo HTML sin enviarlo a Internet, usa [Mailpit](#correo-de-verificación-en-local-con-mailpit).
 
 > `DEMO_DATA=false` evita crear la cuenta demo en producción. Si quieres enseñar la app con datos de ejemplo, cámbialo a `true` solo en un entorno controlado.
 
@@ -507,6 +590,9 @@ Servicios:
 | `frontend` | Nginx con el build de Angular | interno `80` |
 | `backend` | API Spring Boot | interno `8080` |
 | `postgres` | PostgreSQL 17 con volumen persistente | interno `5432` |
+| `mailpit` | Bandeja de correo de pruebas, solo con el perfil `mail` | `1025`, `8025` |
+
+El perfil `mail` no se levanta con `docker compose up -d`; solo se inicia cuando lo pides expresamente. En producción no lo necesitas.
 
 Comprobaciones:
 
@@ -583,6 +669,8 @@ DB_PASSWORD=carhealth \
 │   ├── h2/                  # Datos H2 locales (ignorados por Git)
 │   └── README.md            # Operación de la base de datos
 ├── docs/screenshots/
+├── scripts/
+│   └── mailpit.sh           # Arranca Mailpit local sin Docker
 ├── docker-compose.yml
 ├── Caddyfile
 ├── .env.example
@@ -595,6 +683,7 @@ DB_PASSWORD=carhealth \
 
 - **JWT**: el token se firma con `JWT_SECRET`; usa un valor aleatorio largo y distinto por entorno. La API es stateless y no expone sesiones de servidor.
 - **Contraseñas**: se almacenan con BCrypt; nunca se devuelven en las respuestas.
+- **Verificación de correo**: los códigos de 6 dígitos también se almacenan con BCrypt, caducan a los 10 minutos y tienen un máximo de 5 intentos. No se entrega ningún JWT antes de verificar la cuenta.
 - **Aislamiento**: cada consulta comprueba la propiedad del vehículo. Un usuario no puede leer ni modificar datos de otro.
 - **Validación**: los DTO usan Jakarta Validation y los errores se normalizan a `ProblemDetail`.
 - **H2**: la consola está pensada solo para desarrollo y se desactiva con `H2_CONSOLE=false` en Docker.

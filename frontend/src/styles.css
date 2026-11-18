@@ -660,7 +660,7 @@
     border-radius: 28px;
     background: radial-gradient(120% 120% at 85% 10%, #23573e 0%, #143d2b 42%, #0b2a1c 100%);
     color: #fff;
-    box-shadow: 0 30px 70px -30px rgba(8, 28, 18, 0.55);
+    box-shadow: 0 16px 34px -26px rgba(8, 28, 18, 0.32);
   }
 
   .hero-card::before {

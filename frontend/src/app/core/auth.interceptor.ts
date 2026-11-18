@@ -17,13 +17,17 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   const isApiRequest = req.url.startsWith(environment.apiUrl) || req.url.startsWith('/api/');
   const isPublicAuth =
-    req.url.includes('/auth/login') || req.url.includes('/auth/register');
+    req.url.includes('/auth/login') ||
+    req.url.includes('/auth/register') ||
+    req.url.includes('/auth/verify-email') ||
+    req.url.includes('/auth/resend-verification');
   const token = session.token();
 
-  const request =
-    token && isApiRequest && !isPublicAuth
-      ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
-      : req;
+  const headers: Record<string, string> = { 'Accept-Language': i18n.locale() };
+  if (token && isApiRequest && !isPublicAuth) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  const request = isApiRequest ? req.clone({ setHeaders: headers }) : req;
 
   return next(request).pipe(
     catchError((error: unknown) => {

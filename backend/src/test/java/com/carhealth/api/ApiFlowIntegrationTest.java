@@ -1,20 +1,31 @@
 package com.carhealth.api;
 
+import com.carhealth.api.domain.User;
+import com.carhealth.api.repository.UserRepository;
+import com.carhealth.api.service.VerificationEmailSender;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -28,27 +39,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Import(ApiFlowIntegrationTest.MailTestConfig.class)
 class ApiFlowIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private RecordingVerificationEmailSender emailSender;
+
+    @Autowired
+    private UserRepository userRepository;
+
     @Test
     void fullVehicleFuelAndMaintenanceFlow() throws Exception {
         String email = "integration-" + UUID.randomUUID() + "@carhealth.test";
-        String registerBody = """
-                {"email":"%s","password":"password123","displayName":"Integración"}
-                """.formatted(email);
-
-        MvcResult registerResult = mockMvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(registerBody))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.token").isNotEmpty())
-                .andExpect(jsonPath("$.user.email").value(email))
-                .andReturn();
-        String token = JsonPath.read(registerResult.getResponse().getContentAsString(), "$.token");
-        String auth = "Bearer " + token;
+        String auth = "Bearer " + registerAndVerify(email, "Integración");
 
         mockMvc.perform(get("/api/v1/health"))
                 .andExpect(status().isOk())
@@ -225,20 +231,8 @@ class ApiFlowIntegrationTest {
         String emailA = "owner-" + UUID.randomUUID() + "@carhealth.test";
         String emailB = "outsider-" + UUID.randomUUID() + "@carhealth.test";
 
-        String tokenA = JsonPath.read(mockMvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"email":"%s","password":"password123","displayName":"Dueña"}
-                                """.formatted(emailA)))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString(), "$.token");
-        String tokenB = JsonPath.read(mockMvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"email":"%s","password":"password123","displayName":"Intruso"}
-                                """.formatted(emailB)))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString(), "$.token");
+        String tokenA = registerAndVerify(emailA, "Dueña");
+        String tokenB = registerAndVerify(emailB, "Intruso");
 
         long vehicleA = ((Number) JsonPath.read(mockMvc.perform(post("/api/v1/vehicles")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenA)
@@ -312,5 +306,170 @@ class ApiFlowIntegrationTest {
                                 {"email":"%s","password":"wrong-password"}
                                 """.formatted(email)))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void requiresEmailVerificationAndRejectsInvalidOrExpiredCodes() throws Exception {
+        String email = "verify-" + UUID.randomUUID() + "@carhealth.test";
+        String registerBody = """
+                {"email":"%s","password":"password123","displayName":"Verificación"}
+                """.formatted(email);
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerBody))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.verificationRequired").value(true))
+                .andExpect(jsonPath("$.email").value(email))
+                .andExpect(jsonPath("$.token").doesNotExist());
+
+        String code = emailSender.codeFor(email);
+        assertThat(code).matches("\\d{6}");
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","password":"password123"}
+                                """.formatted(email)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.verificationRequired").value(true))
+                .andExpect(jsonPath("$.email").value(email));
+
+        mockMvc.perform(post("/api/v1/auth/verify-email")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","code":"000000"}
+                                """.formatted(email)))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(post("/api/v1/auth/verify-email")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","code":"%s"}
+                                """.formatted(email, code)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isNotEmpty());
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","password":"password123"}
+                                """.formatted(email)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isNotEmpty());
+
+        String expiredEmail = "expired-" + UUID.randomUUID() + "@carhealth.test";
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","password":"password123","displayName":"Caducado"}
+                                """.formatted(expiredEmail)))
+                .andExpect(status().isCreated());
+        String expiredCode = emailSender.codeFor(expiredEmail);
+
+        User expiredUser = userRepository.findByEmailIgnoreCase(expiredEmail).orElseThrow();
+        expiredUser.setEmailVerificationExpiresAt(Instant.now().minusSeconds(1));
+        userRepository.save(expiredUser);
+
+        mockMvc.perform(post("/api/v1/auth/verify-email")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","code":"%s"}
+                                """.formatted(expiredEmail, expiredCode)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void resendsVerificationWithCooldownAndAllowsVerificationAfterIt() throws Exception {
+        String email = "resend-" + UUID.randomUUID() + "@carhealth.test";
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","password":"password123","displayName":"Reenvío"}
+                                """.formatted(email)))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/v1/auth/resend-verification")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s"}
+                                """.formatted(email)))
+                .andExpect(status().isTooManyRequests());
+
+        User user = userRepository.findByEmailIgnoreCase(email).orElseThrow();
+        user.setEmailVerificationSentAt(Instant.now().minusSeconds(61));
+        userRepository.save(user);
+
+        mockMvc.perform(post("/api/v1/auth/resend-verification")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s"}
+                                """.formatted(email)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.verificationRequired").value(true));
+
+        String code = emailSender.codeFor(email);
+        mockMvc.perform(post("/api/v1/auth/verify-email")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","code":"%s"}
+                                """.formatted(email, code)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isNotEmpty());
+    }
+
+    private String registerAndVerify(String email, String displayName) throws Exception {
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","password":"password123","displayName":"%s"}
+                                """.formatted(email, displayName)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.verificationRequired").value(true));
+
+        String code = emailSender.codeFor(email);
+        assertThat(code).matches("\\d{6}");
+
+        MvcResult verifyResult = mockMvc.perform(post("/api/v1/auth/verify-email")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","code":"%s"}
+                                """.formatted(email, code)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isNotEmpty())
+                .andExpect(jsonPath("$.user.email").value(email))
+                .andReturn();
+        return JsonPath.read(verifyResult.getResponse().getContentAsString(), "$.token");
+    }
+
+    @TestConfiguration
+    static class MailTestConfig {
+
+        @Bean
+        @Primary
+        RecordingVerificationEmailSender recordingVerificationEmailSender() {
+            return new RecordingVerificationEmailSender();
+        }
+    }
+
+    static class RecordingVerificationEmailSender implements VerificationEmailSender {
+
+        private final Map<String, String> codes = new ConcurrentHashMap<>();
+
+        @Override
+        public void sendVerificationCode(
+                String email,
+                String displayName,
+                String code,
+                Instant expiresAt,
+                Locale locale) {
+            codes.put(email.toLowerCase(Locale.ROOT), code);
+        }
+
+        String codeFor(String email) {
+            String code = codes.get(email.toLowerCase(Locale.ROOT));
+            assertThat(code).as("verification code for " + email).isNotNull();
+            return code;
+        }
     }
 }

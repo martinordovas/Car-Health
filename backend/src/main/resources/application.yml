@@ -1,6 +1,22 @@
 spring:
   application:
     name: carhealth-api
+  web:
+    locale: es
+    locale-resolver: accept-header
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:false}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS:false}
+          ssl:
+            enable: ${MAIL_SMTP_SSL:false}
   datasource:
     # Ruta relativa a backend/ (directorio de trabajo de Maven y VS Code).
     # En Docker se sobrescribe con DB_URL apuntando a PostgreSQL.
@@ -35,6 +51,10 @@ app:
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:4200}
   demo-data: ${DEMO_DATA:true}
+  mail:
+    enabled: ${MAIL_ENABLED:false}
+    from: ${MAIL_FROM:no-reply@carhealth.local}
+    from-name: ${MAIL_FROM_NAME:Car Health}
 
 springdoc:
   api-docs:

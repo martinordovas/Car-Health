@@ -7,6 +7,11 @@ CREATE TABLE users (
     password_hash VARCHAR(100) NOT NULL,
     display_name VARCHAR(80) NOT NULL,
     created_at TIMESTAMP(6) WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    email_verification_code_hash VARCHAR(100),
+    email_verification_expires_at TIMESTAMP(6) WITH TIME ZONE,
+    email_verification_sent_at TIMESTAMP(6) WITH TIME ZONE,
+    email_verification_attempts INTEGER NOT NULL DEFAULT 0,
     CONSTRAINT uk_users_email UNIQUE (email)
 );
 

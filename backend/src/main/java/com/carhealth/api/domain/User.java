@@ -29,6 +29,21 @@ public class User {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified;
+
+    @Column(name = "email_verification_code_hash", length = 100)
+    private String emailVerificationCodeHash;
+
+    @Column(name = "email_verification_expires_at")
+    private Instant emailVerificationExpiresAt;
+
+    @Column(name = "email_verification_sent_at")
+    private Instant emailVerificationSentAt;
+
+    @Column(name = "email_verification_attempts", nullable = false)
+    private int emailVerificationAttempts;
+
     protected User() {
     }
 
@@ -68,5 +83,45 @@ public class User {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
+    }
+
+    public String getEmailVerificationCodeHash() {
+        return emailVerificationCodeHash;
+    }
+
+    public void setEmailVerificationCodeHash(String emailVerificationCodeHash) {
+        this.emailVerificationCodeHash = emailVerificationCodeHash;
+    }
+
+    public Instant getEmailVerificationExpiresAt() {
+        return emailVerificationExpiresAt;
+    }
+
+    public void setEmailVerificationExpiresAt(Instant emailVerificationExpiresAt) {
+        this.emailVerificationExpiresAt = emailVerificationExpiresAt;
+    }
+
+    public Instant getEmailVerificationSentAt() {
+        return emailVerificationSentAt;
+    }
+
+    public void setEmailVerificationSentAt(Instant emailVerificationSentAt) {
+        this.emailVerificationSentAt = emailVerificationSentAt;
+    }
+
+    public int getEmailVerificationAttempts() {
+        return emailVerificationAttempts;
+    }
+
+    public void setEmailVerificationAttempts(int emailVerificationAttempts) {
+        this.emailVerificationAttempts = emailVerificationAttempts;
     }
 }
