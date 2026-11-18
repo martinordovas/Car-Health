@@ -8,7 +8,7 @@ import { IconComponent } from '../icon/icon';
   template: `
     <button
       type="button"
-      class="inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-line bg-surface px-2 text-[10px] font-extrabold text-ink transition hover:border-brand/30 dark:text-accent sm:hidden"
+      class="inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-line bg-surface px-2 text-[10px] font-extrabold text-ink transition hover:border-brand/30 active:scale-95 dark:text-accent sm:hidden"
       (click)="i18n.toggle()"
       [attr.title]="i18n.switchLabel()"
       [attr.aria-label]="i18n.switchLabel()"
@@ -24,7 +24,7 @@ import { IconComponent } from '../icon/icon';
       <app-icon name="languages" [size]="14" class="mx-1.5 text-faint" />
       <button
         type="button"
-        class="rounded-full px-2 py-1 text-[10px] font-extrabold transition"
+        class="rounded-full px-2 py-1 text-[10px] font-extrabold transition active:scale-95"
         [class]="
           !i18n.isEnglish()
             ? 'bg-ink text-canvas dark:bg-accent dark:text-accent-ink'
@@ -38,7 +38,7 @@ import { IconComponent } from '../icon/icon';
       </button>
       <button
         type="button"
-        class="rounded-full px-2 py-1 text-[10px] font-extrabold transition"
+        class="rounded-full px-2 py-1 text-[10px] font-extrabold transition active:scale-95"
         [class]="
           i18n.isEnglish()
             ? 'bg-ink text-canvas dark:bg-accent dark:text-accent-ink'

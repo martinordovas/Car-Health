@@ -5,7 +5,7 @@
     </div>
 
     <nav
-      class="mt-9 flex flex-1 flex-col gap-1"
+      class="stagger-children mt-9 flex flex-1 flex-col gap-1"
       [attr.aria-label]="'layout.aria.mainNav' | t"
     >
       <p class="mb-2 px-3 text-[9px] font-bold uppercase tracking-[0.16em] text-faint">
@@ -32,32 +32,6 @@
         <app-icon name="plus" [size]="17" />
         {{ 'layout.addRecord' | t }}
       </button>
-
-      <div class="rounded-2xl border border-line bg-surface-soft p-3.5">
-        <div class="flex items-center justify-between gap-2">
-          <span class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-muted">
-            <span
-              class="size-1.5 rounded-full"
-              [class]="connectivity.offline() ? 'bg-warning' : 'bg-success'"
-            ></span>
-            {{ connectivity.label() }}
-          </span>
-          @if (queue.pendingCount() > 0) {
-            <span class="chip chip-warning">{{
-              'layout.pendingShort' | t: { count: queue.pendingCount() }
-            }}</span>
-          } @else if (queue.failedCount() > 0) {
-            <span class="chip chip-danger">{{
-              'layout.errorShort' | t: { count: queue.failedCount() }
-            }}</span>
-          } @else {
-            <app-icon name="check-circle" [size]="14" class="text-success" />
-          }
-        </div>
-        <p class="mt-2 text-[10px] leading-relaxed text-faint">
-          {{ 'layout.localDataHint' | t }}
-        </p>
-      </div>
 
       <a routerLink="/app/garage" class="flex items-center gap-2.5 rounded-2xl p-2 transition hover:bg-surface-soft">
         <span class="grid size-9 shrink-0 place-items-center rounded-full bg-brand-soft text-xs font-extrabold text-brand dark:text-accent">

@@ -145,13 +145,13 @@
               @if (locationOpen() && suggestions().length > 0) {
                 <div
                   id="place-suggestions"
-                  class="absolute inset-x-0 top-full z-40 mt-2 overflow-hidden rounded-2xl border border-line bg-surface shadow-float"
+                  class="suggestions-panel absolute inset-x-0 top-full z-40 mt-2 overflow-hidden rounded-2xl border border-line bg-surface shadow-float"
                   role="listbox"
                 >
                   @for (place of suggestions(); track place.id) {
                     <button
                       type="button"
-                      class="flex w-full items-start gap-3 border-b border-line/70 px-3.5 py-3 text-left transition last:border-0 hover:bg-surface-soft"
+                      class="suggestion-item flex w-full items-start gap-3 border-b border-line/70 px-3.5 py-3 text-left transition last:border-0 hover:bg-surface-soft"
                       role="option"
                       (pointerdown)="$event.preventDefault(); selectLocation(place)"
                     >

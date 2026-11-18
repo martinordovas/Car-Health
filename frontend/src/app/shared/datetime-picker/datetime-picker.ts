@@ -1,4 +1,13 @@
-import { Component, HostListener, computed, forwardRef, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  HostListener,
+  OnDestroy,
+  computed,
+  forwardRef,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { I18nService } from '../../core/i18n.service';
 import type { Locale } from '../../core/i18n';
@@ -115,14 +124,17 @@ function capitalize(value: string): string {
         </button>
       </div>
 
-      @if (open()) {
+      @if (open() || closing()) {
         <div
-          class="fixed inset-0 z-[60] bg-[#07140d]/35 backdrop-blur-[1px] sm:hidden"
+          class="popover-backdrop fixed inset-0 z-[60] bg-[#07140d]/35 backdrop-blur-[1px] sm:hidden"
+          [class.is-closing]="closing()"
           aria-hidden="true"
           (click)="close()"
         ></div>
         <div
-          class="fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-[70] max-h-[calc(100dvh-7rem)] origin-bottom overflow-y-auto overscroll-contain rounded-[22px] border border-line bg-surface shadow-float animate-[scaleIn_160ms_ease-out] sm:absolute sm:inset-auto sm:left-0 sm:top-[calc(100%+8px)] sm:z-50 sm:max-h-none sm:w-[336px] sm:origin-top-left sm:overflow-hidden"
+          class="popover-panel fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-[70] max-h-[calc(100dvh-7rem)] origin-bottom overflow-y-auto overscroll-contain rounded-[22px] border border-line bg-surface shadow-float sm:absolute sm:inset-auto sm:left-0 sm:top-[calc(100%+8px)] sm:z-50 sm:max-h-none sm:w-[336px] sm:origin-top-left sm:overflow-hidden"
+          [class.is-closing]="closing()"
+          [attr.inert]="closing() ? '' : null"
           role="dialog"
           [attr.aria-label]="i18n.t('datePicker.dialogAria')"
         >
@@ -211,9 +223,7 @@ function capitalize(value: string): string {
                 />
               </div>
             </div>
-            <span class="text-[9px] font-medium text-faint">{{
-              i18n.t('datePicker.24h')
-            }}</span>
+            <span class="text-[9px] font-medium text-faint">{{ i18n.t('datePicker.24h') }}</span>
           </div>
 
           <div class="flex items-center justify-between gap-2 border-t border-line px-3 py-2">
@@ -234,12 +244,14 @@ function capitalize(value: string): string {
     </div>
   `,
 })
-export class DateTimePickerComponent implements ControlValueAccessor {
+export class DateTimePickerComponent implements ControlValueAccessor, OnDestroy {
   readonly i18n = inject(I18nService);
   readonly inputId = input('date');
   readonly invalid = input(false);
   readonly disabled = signal(false);
   readonly open = signal(false);
+  readonly closing = signal(false);
+  private closeTimer: ReturnType<typeof window.setTimeout> | null = null;
 
   private readonly selected = signal<Date | null>(null);
   private readonly viewYear = signal(new Date().getFullYear());
@@ -337,6 +349,8 @@ export class DateTimePickerComponent implements ControlValueAccessor {
     const date = this.selected() ?? new Date();
     this.viewYear.set(date.getFullYear());
     this.viewMonth.set(date.getMonth());
+    if (this.closeTimer) window.clearTimeout(this.closeTimer);
+    this.closing.set(false);
     this.open.set(true);
   }
 
@@ -344,7 +358,13 @@ export class DateTimePickerComponent implements ControlValueAccessor {
     if (!this.open()) return;
     this.commitTime();
     this.open.set(false);
+    this.closing.set(true);
     this.onTouched();
+    if (this.closeTimer) window.clearTimeout(this.closeTimer);
+    this.closeTimer = window.setTimeout(() => {
+      this.closing.set(false);
+      this.closeTimer = null;
+    }, 140);
   }
 
   moveMonth(offset: number): void {
@@ -450,6 +470,10 @@ export class DateTimePickerComponent implements ControlValueAccessor {
   @HostListener('document:keydown.escape')
   onDocumentClick(): void {
     this.close();
+  }
+
+  ngOnDestroy(): void {
+    if (this.closeTimer) window.clearTimeout(this.closeTimer);
   }
 
   private emit(date: Date): void {

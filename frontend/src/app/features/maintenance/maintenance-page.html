@@ -52,7 +52,7 @@
         </button>
       </div>
     } @else {
-      <div class="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div class="stagger-children mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <div class="card-flat p-4">
           <div class="flex items-center gap-2 text-muted">
             <app-icon name="shield" [size]="14" />
@@ -175,7 +175,7 @@
               </p>
             </div>
           }
-          <div class="grid gap-4 md:grid-cols-2">
+          <div class="stagger-children grid gap-4 md:grid-cols-2">
             @for (rule of rules(); track rule.id) {
               <article class="card card-hover overflow-hidden p-5">
                 <div class="flex items-start gap-3">
@@ -361,7 +361,7 @@
                 </button>
 
                 @if (isExpanded(record.id)) {
-                  <div class="border-t border-line bg-surface-soft/60 px-4 py-4 sm:px-5">
+                  <div class="expand-in border-t border-line bg-surface-soft/60 px-4 py-4 sm:px-5">
                     <div class="grid gap-3 text-xs sm:grid-cols-3">
                       <div>
                         <p class="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">
