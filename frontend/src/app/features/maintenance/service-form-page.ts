@@ -16,6 +16,7 @@ import type {
 import { ServiceRecordService } from '../../core/service-record.service';
 import { ToastService } from '../../core/toast.service';
 import { VehicleStore } from '../../core/vehicle-store.service';
+import { DateTimePickerComponent } from '../../shared/datetime-picker/datetime-picker';
 import { IconComponent } from '../../shared/icon/icon';
 import { TranslatePipe } from '../../shared/i18n/translate.pipe';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
@@ -28,7 +29,14 @@ interface CategoryOption {
 
 @Component({
   selector: 'app-service-form-page',
-  imports: [ReactiveFormsModule, RouterLink, IconComponent, PageHeaderComponent, TranslatePipe],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    DateTimePickerComponent,
+    IconComponent,
+    PageHeaderComponent,
+    TranslatePipe,
+  ],
   templateUrl: './service-form-page.html',
 })
 export class ServiceFormPageComponent {

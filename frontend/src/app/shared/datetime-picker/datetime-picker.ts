@@ -56,22 +56,23 @@ function pad(value: number): string {
   return String(value).padStart(2, '0');
 }
 
-function parseInputValue(value: string | null | undefined): Date | null {
-  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(value ?? '');
+function parseInputValue(value: string | null | undefined, dateOnly = false): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(value ?? '');
   if (!match) return null;
 
   const date = new Date(
     Number(match[1]),
     Number(match[2]) - 1,
     Number(match[3]),
-    Number(match[4]),
-    Number(match[5]),
+    dateOnly ? 12 : Number(match[4] ?? 0),
+    dateOnly ? 0 : Number(match[5] ?? 0),
   );
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function toInputValue(date: Date): string {
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+function toInputValue(date: Date, dateOnly = false): string {
+  const day = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  return dateOnly ? day : `${day}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 function sameDay(left: Date, right: Date): boolean {
@@ -102,7 +103,7 @@ function capitalize(value: string): string {
         <span class="field-icon"><app-icon name="calendar" [size]="17" /></span>
         <button
           type="button"
-          class="field flex items-center gap-2 pe-10 text-left"
+          class="field flex items-center gap-2 text-left"
           [id]="inputId()"
           [class.field-error]="invalid()"
           [class.date-trigger-open]="open()"
@@ -181,59 +182,63 @@ function capitalize(value: string): string {
             }
           </div>
 
-          <div
-            class="flex items-center justify-between gap-3 border-t border-line bg-surface-soft/60 px-3 py-2.5"
-          >
-            <div class="flex items-center gap-1.5">
-              <app-icon name="clock" [size]="14" class="text-faint" />
-              <span class="text-[9px] font-[800] uppercase tracking-[0.1em] text-faint">{{
-                i18n.t('datePicker.hour')
-              }}</span>
-              <div class="ms-1 flex items-center gap-1">
-                <input
-                  type="text"
-                  inputmode="numeric"
-                  maxlength="2"
-                  class="time-part"
-                  [attr.aria-label]="i18n.t('datePicker.hoursAria')"
-                  autocomplete="off"
-                  [value]="hourDraft()"
-                  [disabled]="disabled()"
-                  (focus)="selectInput($event)"
-                  (input)="onTimeInput('hour', $event)"
-                  (change)="commitTime()"
-                  (blur)="commitTime()"
-                  (keydown.enter)="$event.preventDefault(); commitTime()"
-                />
-                <span class="pb-0.5 text-sm font-extrabold text-faint">:</span>
-                <input
-                  type="text"
-                  inputmode="numeric"
-                  maxlength="2"
-                  class="time-part"
-                  [attr.aria-label]="i18n.t('datePicker.minutesAria')"
-                  autocomplete="off"
-                  [value]="minuteDraft()"
-                  [disabled]="disabled()"
-                  (focus)="selectInput($event)"
-                  (input)="onTimeInput('minute', $event)"
-                  (change)="commitTime()"
-                  (blur)="commitTime()"
-                  (keydown.enter)="$event.preventDefault(); commitTime()"
-                />
+          @if (mode() === 'datetime') {
+            <div
+              class="flex items-center justify-between gap-3 border-t border-line bg-surface-soft/60 px-3 py-2.5"
+            >
+              <div class="flex items-center gap-1.5">
+                <app-icon name="clock" [size]="14" class="text-faint" />
+                <span class="text-[9px] font-[800] uppercase tracking-[0.1em] text-faint">{{
+                  i18n.t('datePicker.hour')
+                }}</span>
+                <div class="ms-1 flex items-center gap-1">
+                  <input
+                    type="text"
+                    inputmode="numeric"
+                    maxlength="2"
+                    class="time-part"
+                    [attr.aria-label]="i18n.t('datePicker.hoursAria')"
+                    autocomplete="off"
+                    [value]="hourDraft()"
+                    [disabled]="disabled()"
+                    (focus)="selectInput($event)"
+                    (input)="onTimeInput('hour', $event)"
+                    (change)="commitTime()"
+                    (blur)="commitTime()"
+                    (keydown.enter)="$event.preventDefault(); commitTime()"
+                  />
+                  <span class="pb-0.5 text-sm font-extrabold text-faint">:</span>
+                  <input
+                    type="text"
+                    inputmode="numeric"
+                    maxlength="2"
+                    class="time-part"
+                    [attr.aria-label]="i18n.t('datePicker.minutesAria')"
+                    autocomplete="off"
+                    [value]="minuteDraft()"
+                    [disabled]="disabled()"
+                    (focus)="selectInput($event)"
+                    (input)="onTimeInput('minute', $event)"
+                    (change)="commitTime()"
+                    (blur)="commitTime()"
+                    (keydown.enter)="$event.preventDefault(); commitTime()"
+                  />
+                </div>
               </div>
+              <span class="text-[9px] font-medium text-faint">{{ i18n.t('datePicker.24h') }}</span>
             </div>
-            <span class="text-[9px] font-medium text-faint">{{ i18n.t('datePicker.24h') }}</span>
-          </div>
+          }
 
           <div class="flex items-center justify-between gap-2 border-t border-line px-3 py-2">
             <div class="flex items-center gap-1">
               <button type="button" class="btn btn-ghost btn-sm px-2.5" (click)="setToday()">
                 {{ i18n.t('datePicker.today') }}
               </button>
-              <button type="button" class="btn btn-ghost btn-sm px-2.5" (click)="setNow()">
-                {{ i18n.t('datePicker.now') }}
-              </button>
+              @if (mode() === 'datetime') {
+                <button type="button" class="btn btn-ghost btn-sm px-2.5" (click)="setNow()">
+                  {{ i18n.t('datePicker.now') }}
+                </button>
+              }
             </div>
             <button type="button" class="btn btn-primary btn-sm" (click)="close()">
               {{ i18n.t('datePicker.done') }}
@@ -248,6 +253,7 @@ export class DateTimePickerComponent implements ControlValueAccessor, OnDestroy 
   readonly i18n = inject(I18nService);
   readonly inputId = input('date');
   readonly invalid = input(false);
+  readonly mode = input<'datetime' | 'date'>('datetime');
   readonly disabled = signal(false);
   readonly open = signal(false);
   readonly closing = signal(false);
@@ -274,6 +280,7 @@ export class DateTimePickerComponent implements ControlValueAccessor, OnDestroy 
     const formats = dateFormats(locale);
     const weekday = capitalize(formats.weekdayShort.format(date).replace(/\./g, ''));
     const day = formats.dayMonthYear.format(date).replace(/\./g, '');
+    if (this.mode() === 'date') return `${weekday}, ${day}`;
     return `${weekday}, ${day} · ${pad(date.getHours())}:${pad(date.getMinutes())}`;
   });
 
@@ -311,12 +318,15 @@ export class DateTimePickerComponent implements ControlValueAccessor, OnDestroy 
   private onTouched: () => void = () => {};
 
   writeValue(value: string | null): void {
-    const date = parseInputValue(value);
+    const dateOnly = this.mode() === 'date';
+    const date = parseInputValue(value, dateOnly);
     this.selected.set(date);
 
     if (date) {
-      this.hourDraft.set(pad(date.getHours()));
-      this.minuteDraft.set(pad(date.getMinutes()));
+      if (!dateOnly) {
+        this.hourDraft.set(pad(date.getHours()));
+        this.minuteDraft.set(pad(date.getMinutes()));
+      }
       this.viewYear.set(date.getFullYear());
       this.viewMonth.set(date.getMonth());
       return;
@@ -375,12 +385,13 @@ export class DateTimePickerComponent implements ControlValueAccessor, OnDestroy 
 
   selectDay(day: CalendarDay): void {
     const current = this.selected() ?? new Date();
+    const dateOnly = this.mode() === 'date';
     const date = new Date(
       day.date.getFullYear(),
       day.date.getMonth(),
       day.date.getDate(),
-      current.getHours(),
-      current.getMinutes(),
+      dateOnly ? 12 : current.getHours(),
+      dateOnly ? 0 : current.getMinutes(),
     );
     this.viewYear.set(date.getFullYear());
     this.viewMonth.set(date.getMonth());
@@ -390,6 +401,7 @@ export class DateTimePickerComponent implements ControlValueAccessor, OnDestroy 
   setToday(): void {
     const now = new Date();
     const current = this.selected() ?? now;
+    const dateOnly = this.mode() === 'date';
     this.viewYear.set(now.getFullYear());
     this.viewMonth.set(now.getMonth());
     this.emit(
@@ -397,8 +409,8 @@ export class DateTimePickerComponent implements ControlValueAccessor, OnDestroy 
         now.getFullYear(),
         now.getMonth(),
         now.getDate(),
-        current.getHours(),
-        current.getMinutes(),
+        dateOnly ? 12 : current.getHours(),
+        dateOnly ? 0 : current.getMinutes(),
       ),
     );
   }
@@ -428,6 +440,7 @@ export class DateTimePickerComponent implements ControlValueAccessor, OnDestroy 
   }
 
   commitTime(): void {
+    if (this.mode() === 'date') return;
     const date = this.selected();
     if (!date) return;
 
@@ -480,6 +493,6 @@ export class DateTimePickerComponent implements ControlValueAccessor, OnDestroy 
     this.selected.set(date);
     this.hourDraft.set(pad(date.getHours()));
     this.minuteDraft.set(pad(date.getMinutes()));
-    this.onChange(toInputValue(date));
+    this.onChange(toInputValue(date, this.mode() === 'date'));
   }
 }

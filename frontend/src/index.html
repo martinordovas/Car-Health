@@ -1,11 +1,12 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" translate="no">
   <head>
     <meta charset="utf-8" />
     <title>Car Health · Tu garaje, en orden</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="description" content="Controla repostajes, mantenimiento, consumo real y gastos de tu coche desde un solo lugar." />
+    <meta name="google" content="notranslate" />
     <meta name="theme-color" content="#f2f4ef" />
     <meta name="color-scheme" content="light dark" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -22,7 +23,15 @@
           var dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
           if (dark) document.documentElement.classList.add('dark');
           var locale = localStorage.getItem('ch-locale');
-          if (locale === 'en' || locale === 'es') document.documentElement.lang = locale;
+          if (locale !== 'en' && locale !== 'es') {
+            var browserLanguage = (
+              (navigator.languages && navigator.languages[0]) ||
+              navigator.language ||
+              ''
+            ).toLowerCase();
+            locale = browserLanguage.indexOf('en') === 0 ? 'en' : 'es';
+          }
+          document.documentElement.lang = locale;
         } catch (e) {}
       })();
     </script>

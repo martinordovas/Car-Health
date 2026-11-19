@@ -28,6 +28,25 @@ describe('DateTimePickerComponent', () => {
     expect(component.valueLabel()).toBe('Mar, 10 nov 2026 · 18:45');
   });
 
+  it('funciona en modo solo fecha sin mostrar hora', () => {
+    const fixture = TestBed.createComponent(DateTimePickerComponent);
+    fixture.componentRef.setInput('mode', 'date');
+    const component = fixture.componentInstance;
+    let emitted = '';
+    component.registerOnChange((value) => (emitted = value));
+
+    component.writeValue('2026-11-13');
+    fixture.detectChanges();
+
+    expect(component.valueLabel()).toBe('Vie, 13 nov 2026');
+
+    const day = component.days().find((item) => item.currentMonth && item.day === 10);
+    expect(day).toBeTruthy();
+    component.selectDay(day!);
+
+    expect(emitted).toBe('2026-11-10');
+  });
+
   it('normaliza la hora editada y conserva el día seleccionado', () => {
     const fixture = TestBed.createComponent(DateTimePickerComponent);
     const component = fixture.componentInstance;

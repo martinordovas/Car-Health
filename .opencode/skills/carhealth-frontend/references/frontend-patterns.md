@@ -54,7 +54,7 @@ No formatees con `toFixed()` o `toLocaleString()` directamente en una plantilla 
 ## Componentes y estilos
 
 - Los componentes compartidos viven en `shared/`.
-- El selector de fecha y hora es `shared/datetime-picker`; no vuelvas al input nativo.
+- El selector de fecha y hora es `shared/datetime-picker`; no vuelvas al input nativo. Usa `mode="date"` para fechas sin hora, como las intervenciones de mantenimiento.
 - Las gráficas están encapsuladas en `shared/`; no mezcles cálculo y presentación.
 - Los estilos globales y tokens están en `styles.css`.
 - Mantén el enfoque mobile-first, los focus visibles y el contraste.
